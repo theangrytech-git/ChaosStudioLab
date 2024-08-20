@@ -1,0 +1,11 @@
+environment_tag = "ChaosStudioDemo"
+owner_tag       = "dacat"
+labname         = "chaos-demo"
+region1         = "uksouth"
+region1code     = "uks"
+region2         = "ukwest"
+region2code     = "ukw"
+region1cidr     = "10.150.0.0/19"
+region2cidr     = "10.160.0.0/19"
+servercounta    = 1
+servercountb    = 1
