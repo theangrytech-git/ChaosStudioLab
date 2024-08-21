@@ -12,22 +12,22 @@ variable "labname" {
   type        = string
   description = "Lab name"
 }
-variable "region1" {
+variable "uks" {
   description = "The location for this Lab environment"
   type        = string
 }
 
-variable "region2" {
+variable "ukw" {
   description = "The location for this Lab environment"
   type        = string
 }
 
-variable "region1cidr" {
+variable "ukscidr" {
   description = "CIDR range for Region 1"
   type        = string
 }
 
-variable "region2cidr" {
+variable "ukwcidr" {
   description = "CIDR range for Region 2"
   type        = string
 }
@@ -41,32 +41,32 @@ variable "servercountb" {
   type        = string
 }
 
-variable "region1code" {
+variable "ukscode" {
   description = "Server Naming Code for Region 1"
   type        = string
 }
 
-variable "region2code" {
+variable "ukwcode" {
   description = "Server Naming Code for Region 2"
   type        = string
 }
 
-variable "region1accounttier" {
+variable "uksaccounttier" {
   description = "Account Tier for Region 1"
   type        = string
 }
 
-variable "region1art" {
+variable "uksart" {
   description = "Account Replication Type for Region 1"
   type        = string
 }
 
-variable "region1-asp-os" {
+variable "uks-asp-os" {
   description = "ASP OS Type for Region 1"
   type        = string
 }
 
-variable "region1-asp-sku" {
+variable "uks-asp-sku" {
   description = "ASP SKU type"
   type = string
 }
