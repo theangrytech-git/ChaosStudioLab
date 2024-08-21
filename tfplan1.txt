@@ -1,0 +1,386 @@
+random_id.dns-name: Refreshing state... [id=yAN1tg]
+random_id.kvname: Refreshing state... [id=tCKz6n0]
+random_password.vmpassword: Refreshing state... [id=none]
+data.azurerm_client_config.current: Reading...
+azurerm_resource_group.uks: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01]
+azurerm_resource_group.ukw: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01]
+data.azurerm_client_config.current: Read complete after 0s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9OTlkNmExNjEtNDIyOC00MmMyLTgxMzYtMGY3NTllMDU2ZDFmO3N1YnNjcmlwdGlvbklkPWVjMDhmNTRhLTBmMWEtNGMzOS1hOTY0LWNjNWYyODg5MjRlNDt0ZW5hbnRJZD02OGEzYmU0OC1jNTVlLTQxNGMtYjJiZi01Y2M0ZDJkODFkNzQ=]
+azurerm_network_security_group.ukw-nsg1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkSecurityGroups/nsg-snet-ukwest-vnet-hub-01]
+azurerm_availability_set.ukw-asa: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-ukwest-a]
+azurerm_public_ip.ukw-fwmanpip: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fwman-ukwest-01]
+azurerm_availability_set.ukw-asb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-ukwest-b]
+azurerm_public_ip.ukw-fwpip: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fw-ukwest-01]
+azurerm_virtual_network.ukw-hub1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01]
+azurerm_network_security_group.uks-nsg1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkSecurityGroups/nsg-snet-uksouth-vnet-hub-01]
+azurerm_service_plan.uks-asp: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/serverFarms/uksouth-asp-01]
+azurerm_public_ip.uks-fwpip: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fw-uksouth-01]
+azurerm_storage_account.uks-sa1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Storage/storageAccounts/uksouthsa01]
+azurerm_traffic_manager_profile.tm1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/trafficManagerProfiles/tm-chaos-demo]
+azurerm_virtual_network.uks-hub1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01]
+azurerm_availability_set.uks-asa: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-a]
+azurerm_public_ip.uks-fwmanpip: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fwman-uksouth-01]
+azurerm_availability_set.uks-asb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-b]
+azurerm_subnet.ukw-hub1-subnet: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/snet-ukwest-vnet-hub-01]
+azurerm_subnet.ukw-hub1-subnetfwman: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/AzureFirewallManagementSubnet]
+azurerm_subnet.ukw-hub1-subnetlb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/snetlb-ukwest-vnet-hub-01]
+azurerm_subnet.ukw-hub1-subnetfw: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/AzureFirewallSubnet]
+azurerm_lb.ukw-lb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest]
+azurerm_virtual_network_peering.hub1-to-hub2: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/virtualNetworkPeerings/uksouth-hub-to-ukwest-hub]
+azurerm_subnet.uks-hub1-subnetlb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snetlb-uksouth-vnet-hub-01]
+azurerm_virtual_network_peering.hub2-to-hub1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/virtualNetworkPeerings/ukwest-hub-to-uksouth-hub]
+azurerm_subnet.uks-hub1-subnetfw: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/AzureFirewallSubnet]
+azurerm_subnet.uks-hub1-subnet: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_subnet.uks-hub1-subnetfwman: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/AzureFirewallManagementSubnet]
+azurerm_subnet_network_security_group_association.ukw-hub: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/snet-ukwest-vnet-hub-01]
+azurerm_network_interface.ukw-bnics[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-b-0]
+azurerm_network_interface.ukw-anics[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-a-0]
+azurerm_firewall.ukw-fw1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-ukwest-01]
+azurerm_lb.uks-lb: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth]
+azurerm_lb_backend_address_pool.ukw-pool: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest/backendAddressPools/BackEndAddressPool]
+azurerm_lb_probe.ukw-probe: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest/probes/http-probe]
+azurerm_firewall.uks-fw1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01]
+azurerm_subnet_network_security_group_association.uks-hub: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_key_vault.kv1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d]
+azurerm_network_interface.uks-anics[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-a-0]
+azurerm_network_interface.uks-bnics[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-b-0]
+azurerm_lb_probe.uks-probe: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/probes/http-probe]
+azurerm_lb_backend_address_pool.uks-pool: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_lb_rule.ukw-rule: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest/loadBalancingRules/LBRule]
+azurerm_network_interface_backend_address_pool_association.ukw-a[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-a-0/ipConfigurations/ukwest-nic-a-0-ipconfig|/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest/backendAddressPools/BackEndAddressPool]
+azurerm_route_table.uks-rt1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/routeTables/rtbl-uksouth-01]
+azurerm_firewall_nat_rule_collection.uks-nat: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01/natRuleCollections/uksouth-nat1]
+azurerm_firewall_network_rule_collection.uks-outbound: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01/networkRuleCollections/uksouth-outbound]
+azurerm_network_interface_backend_address_pool_association.ukw-b[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-b-0/ipConfigurations/ukwest-nic-b-0-ipconfig|/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-ukwest/backendAddressPools/BackEndAddressPool]
+azurerm_route_table.ukw-rt1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/routeTables/rtbl-ukwest-01]
+azurerm_firewall_network_rule_collection.ukw-outbound: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-ukwest-01/networkRuleCollections/ukwest-outbound]
+azurerm_firewall_nat_rule_collection.ukw-nat: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-ukwest-01/natRuleCollections/ukwest-nat1]
+azurerm_network_interface_backend_address_pool_association.uks-a[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-a-0/ipConfigurations/uksouth-nic-a-0-ipconfig|/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_network_interface_backend_address_pool_association.uks-b[0]: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-b-0/ipConfigurations/uksouth-nic-b-0-ipconfig|/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_lb_rule.uks-rule: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/loadBalancingRules/LBRule]
+azurerm_traffic_manager_azure_endpoint.uks-tme1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/trafficManagerProfiles/tm-chaos-demo/AzureEndpoints/uksouth-endpoint]
+azurerm_subnet_route_table_association.uks: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_traffic_manager_azure_endpoint.ukw-tme1: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/trafficManagerProfiles/tm-chaos-demo/AzureEndpoints/ukwest-endpoint]
+azurerm_subnet_route_table_association.ukw: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-ukwest-hub-01/subnets/snet-ukwest-vnet-hub-01]
+azurerm_linux_function_app.uks-fa: Refreshing state... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/sites/uksouth-fa01]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # azurerm_key_vault.kv1 will be updated in-place
+  ~ resource "azurerm_key_vault" "kv1" {
+        id                              = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d"
+        name                            = "keyvaultb422b3ea7d"
+        tags                            = {
+            "Environment" = "ChaosStudioDemo"
+            "Owner"       = "dacat"
+        }
+        # (13 unchanged attributes hidden)
+
+      ~ network_acls {
+          ~ ip_rules                   = [
+              + "67.208.52.126",
+            ]
+            # (3 unchanged attributes hidden)
+        }
+    }
+
+  # azurerm_key_vault_secret.vmpassword1 will be created
+  + resource "azurerm_key_vault_secret" "vmpassword1" {
+      + content_type            = "uks VM Password Secret"
+      + expiration_date         = (known after apply)
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d"
+      + name                    = "vmpassword1"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + value                   = (sensitive value)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+    }
+
+  # azurerm_key_vault_secret.vmpassword2 will be created
+  + resource "azurerm_key_vault_secret" "vmpassword2" {
+      + content_type            = "ukw VM Password Secret"
+      + expiration_date         = (known after apply)
+      + id                      = (known after apply)
+      + key_vault_id            = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d"
+      + name                    = "vmpassword2"
+      + resource_id             = (known after apply)
+      + resource_versionless_id = (known after apply)
+      + value                   = (sensitive value)
+      + version                 = (known after apply)
+      + versionless_id          = (known after apply)
+    }
+
+  # azurerm_windows_virtual_machine.uks-vmsa[0] will be created
+  + resource "azurerm_windows_virtual_machine" "uks-vmsa" {
+      + admin_password                                         = (sensitive value)
+      + admin_username                                         = "azureadmin"
+      + allow_extension_operations                             = true
+      + availability_set_id                                    = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-a"
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + enable_automatic_updates                               = true
+      + extensions_time_budget                                 = "PT1H30M"
+      + hotpatching_enabled                                    = false
+      + id                                                     = (known after apply)
+      + location                                               = "uksouth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-uks-a-0"
+      + network_interface_ids                                  = [
+          + "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-a-0",
+        ]
+      + patch_assessment_mode                                  = "ImageDefault"
+      + patch_mode                                             = "AutomaticByOS"
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = true
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-uksouth-chaos-demo-01"
+      + size                                                   = "Standard_D2s_v4"
+      + tags                                                   = {
+          + "Environment" = "ChaosStudioDemo"
+          + "Owner"       = "dacat"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = false
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "WindowsServer"
+          + publisher = "MicrosoftWindowsServer"
+          + sku       = "2022-Datacenter"
+          + version   = "latest"
+        }
+    }
+
+  # azurerm_windows_virtual_machine.uks-vmsb[0] will be created
+  + resource "azurerm_windows_virtual_machine" "uks-vmsb" {
+      + admin_password                                         = (sensitive value)
+      + admin_username                                         = "azureadmin"
+      + allow_extension_operations                             = true
+      + availability_set_id                                    = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-b"
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + enable_automatic_updates                               = true
+      + extensions_time_budget                                 = "PT1H30M"
+      + hotpatching_enabled                                    = false
+      + id                                                     = (known after apply)
+      + location                                               = "uksouth"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-uks-b-0"
+      + network_interface_ids                                  = [
+          + "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-b-0",
+        ]
+      + patch_assessment_mode                                  = "ImageDefault"
+      + patch_mode                                             = "AutomaticByOS"
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = true
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-uksouth-chaos-demo-01"
+      + size                                                   = "Standard_D2s_v4"
+      + tags                                                   = {
+          + "Environment" = "ChaosStudioDemo"
+          + "Owner"       = "dacat"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = false
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "WindowsServer"
+          + publisher = "MicrosoftWindowsServer"
+          + sku       = "2022-Datacenter"
+          + version   = "latest"
+        }
+    }
+
+  # azurerm_windows_virtual_machine.ukw-avms[0] will be created
+  + resource "azurerm_windows_virtual_machine" "ukw-avms" {
+      + admin_password                                         = (sensitive value)
+      + admin_username                                         = "azureadmin"
+      + allow_extension_operations                             = true
+      + availability_set_id                                    = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-ukwest-a"
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + enable_automatic_updates                               = true
+      + extensions_time_budget                                 = "PT1H30M"
+      + hotpatching_enabled                                    = false
+      + id                                                     = (known after apply)
+      + location                                               = "ukwest"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-ukw-a-0"
+      + network_interface_ids                                  = [
+          + "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-a-0",
+        ]
+      + patch_assessment_mode                                  = "ImageDefault"
+      + patch_mode                                             = "AutomaticByOS"
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = true
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-ukwest-chaos-demo-01"
+      + size                                                   = "Standard_D2s_v4"
+      + tags                                                   = {
+          + "Environment" = "ChaosStudioDemo"
+          + "Owner"       = "dacat"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = false
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "WindowsServer"
+          + publisher = "MicrosoftWindowsServer"
+          + sku       = "2022-Datacenter"
+          + version   = "latest"
+        }
+    }
+
+  # azurerm_windows_virtual_machine.ukw-bvms[0] will be created
+  + resource "azurerm_windows_virtual_machine" "ukw-bvms" {
+      + admin_password                                         = (sensitive value)
+      + admin_username                                         = "azureadmin"
+      + allow_extension_operations                             = true
+      + availability_set_id                                    = "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-ukwest-b"
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + disk_controller_type                                   = (known after apply)
+      + enable_automatic_updates                               = true
+      + extensions_time_budget                                 = "PT1H30M"
+      + hotpatching_enabled                                    = false
+      + id                                                     = (known after apply)
+      + location                                               = "ukwest"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-ukw-b-0"
+      + network_interface_ids                                  = [
+          + "/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-ukwest-b-0",
+        ]
+      + patch_assessment_mode                                  = "ImageDefault"
+      + patch_mode                                             = "AutomaticByOS"
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = true
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-ukwest-chaos-demo-01"
+      + size                                                   = "Standard_D2s_v4"
+      + tags                                                   = {
+          + "Environment" = "ChaosStudioDemo"
+          + "Owner"       = "dacat"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = false
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = (known after apply)
+          + name                      = (known after apply)
+          + storage_account_type      = "StandardSSD_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "WindowsServer"
+          + publisher = "MicrosoftWindowsServer"
+          + sku       = "2022-Datacenter"
+          + version   = "latest"
+        }
+    }
+
+Plan: 6 to add, 1 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: 
+azurerm_key_vault.kv1: Modifying... [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d]
+azurerm_key_vault.kv1: Modifications complete after 2s [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultb422b3ea7d]
+azurerm_key_vault_secret.vmpassword1: Creating...
+azurerm_key_vault_secret.vmpassword2: Creating...
+azurerm_key_vault_secret.vmpassword1: Creation complete after 0s [id=https://keyvaultb422b3ea7d.vault.azure.net/secrets/vmpassword1/3541ec7fe4b341199a27631e0f7a6c24]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Creating...
+azurerm_key_vault_secret.vmpassword2: Creation complete after 0s [id=https://keyvaultb422b3ea7d.vault.azure.net/secrets/vmpassword2/674fc25181104daa90bd3bc65d000616]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Creating...
+azurerm_windows_virtual_machine.uks-vmsb[0]: Creating...
+azurerm_windows_virtual_machine.ukw-avms[0]: Creating...
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [20s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [20s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [20s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [20s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [30s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [30s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [30s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [30s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [40s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [40s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [40s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [40s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [50s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [51s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [51s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [51s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still creating... [1m1s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [1m1s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still creating... [1m1s elapsed]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Still creating... [1m1s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Creation complete after 1m3s [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Creation complete after 1m3s [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0]
+azurerm_windows_virtual_machine.ukw-bvms[0]: Creation complete after 1m3s [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-ukw-b-0]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [1m11s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [1m21s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Still creating... [1m31s elapsed]
+azurerm_windows_virtual_machine.ukw-avms[0]: Creation complete after 1m33s [id=/subscriptions/ec08f54a-0f1a-4c39-a964-cc5f288924e4/resourceGroups/rg-ukwest-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-ukw-a-0]
+
+Apply complete! Resources: 6 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+_1_Access-URL-via-TrafficManager = "Use this URL to access via Traffic Manager: http://chaos-demo-c80375b6.trafficmanager.net "
+_2_Access-URL-via-uks-Firewall = "Use this URL to access directly to the uksouth Firewall: http://pip-uks-c80375b6.uksouth.cloudapp.azure.com "
+_3_Access-URL-via-ukw-Firewall = "Use this URL to access directly to the ukwest Firewall: http://pip-ukw-c80375b6.ukwest.cloudapp.azure.com "

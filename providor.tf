@@ -5,7 +5,7 @@ terraform {
       version = ">= 3.116.0"
     }
     random = {
-      source = "hashicorp/random"
+      source  = "hashicorp/random"
       version = ">= 3.6.2"
     }
   }
@@ -13,11 +13,11 @@ terraform {
 # Configuration options
 provider "azurerm" {
   features {
-      key_vault {
+    key_vault {
       purge_soft_delete_on_destroy = true
     }
     resource_group {
-    prevent_deletion_if_contains_resources = false
+      prevent_deletion_if_contains_resources = false
     }
 
   }
