@@ -20,6 +20,26 @@ locals {
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
 
+resource "random_string" "random" {
+  length           = 3
+  numeric = true
+  special          = false
+}
+
+resource "random_id" "kvname" {
+  byte_length = 5
+  prefix      = "keyvault"
+}
+
+resource "random_password" "vmpassword" {
+  length  = 20
+  special = true
+}
+
+resource "random_id" "dns-name" {
+  byte_length = 4
+}
+
 # Resource Groups
 resource "azurerm_resource_group" "uks" {
   name     = "rg-${var.uks}-${var.labname}-01"
@@ -200,10 +220,7 @@ resource "azurerm_subnet_route_table_association" "uks" {
 # }
 
 # Key Vault
-resource "random_id" "kvname" {
-  byte_length = 5
-  prefix      = "keyvault"
-}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv1" {
@@ -220,7 +237,7 @@ resource "azurerm_key_vault" "kv1" {
     bypass = "AzureServices"
     #virtual_network_subnet_ids = [azurerm_subnet.uks-hub1-subnet,azurerm_subnet.ukw-hub1-subnet, azurerm_network_interface.uks-anics[count.index].id, azurerm_network_interface.ukw-anics[count.index].id ]
     virtual_network_subnet_ids = concat(
-      [azurerm_subnet.uks-hub1-subnet.id, azurerm_subnet.ukw-hub1-subnet.id],
+      [azurerm_subnet.uks-hub1-subnet.id,], #azurerm_subnet.ukw-hub1-subnet.id],
     )
     ip_rules = [
       "67.208.52.126", # Add your client IP here
@@ -250,10 +267,7 @@ resource "azurerm_key_vault" "kv1" {
     Environment = var.environment_tag
   }
 }
-resource "random_password" "vmpassword" {
-  length  = 20
-  special = true
-}
+
 resource "azurerm_key_vault_secret" "vmpassword1" {
   name         = "vmpassword1"
   value        = random_password.vmpassword.result
@@ -472,7 +486,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
     version   = "latest"
   }
   network_interface {
-    name    = "win-vmss-nic-${random_string.storage_random.result}"
+    name    = "win-vmss-nic-${random_string.random.result}"
     primary = true
 
     ip_configuration {
@@ -594,9 +608,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 
 
 #Public IPs
-resource "random_id" "dns-name" {
-  byte_length = 4
-}
+
 resource "azurerm_public_ip" "uks-fwpip" {
   name                = "pip-fw-${var.uks}-01"
   location            = var.uks
@@ -974,3 +986,6 @@ resource "azurerm_linux_function_app" "uks-fa" {
     Environment = var.environment_tag
   }
 }
+
+# Chaos Studio
+# To be added in after setting up lab
