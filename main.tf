@@ -12,7 +12,7 @@ Function Apps, App Service Plans, and some Chaos Studio experiments.
 *******************************************************************************/
 
 /*******
-Note to self - can not deploy to UK West. Commented out for time being, so I can get it running in a single Region first.
+Note to self - can not deploy to UK West as Chaos Studio is not used in UK West. Commented out for time being, so I can get it running in a single Region first.
 *******/
 
 locals {
@@ -992,10 +992,13 @@ resource "azurerm_linux_function_app" "uks-fa" {
   storage_account_name       = azurerm_storage_account.uks-sa1.name
   storage_account_access_key = azurerm_storage_account.uks-sa1.primary_access_key
   https_only = "true"
-  site_config {}
+  site_config {
+    linux_fx_version = "Python|3.10"  # Specifies Python 3.10 as the runtime
+  }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "dotnet"   # Example of a runtime setting, adjust according to your needs
+    "FUNCTIONS_WORKER_RUNTIME" = "python"
+    "PYTHON_VERSION"           = "3.10"
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
     # Adding secrets from Key Vault
     "appsecret1" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.appsecret1.id})"
