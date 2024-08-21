@@ -1,3 +1,8 @@
+locals {
+  days_to_hours = var.days_to_expire * 24
+  expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+}
+
 # Resource Groups
 resource "azurerm_resource_group" "rg1" {
   name     = "rg-${var.region1}-${var.labname}-01"
@@ -114,7 +119,8 @@ resource "azurerm_network_security_group" "region1-nsg1" {
   location            = var.region1
   resource_group_name = azurerm_resource_group.rg1.name
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -128,7 +134,8 @@ resource "azurerm_network_security_group" "region2-nsg1" {
   location            = var.region2
   resource_group_name = azurerm_resource_group.rg2.name
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -188,6 +195,16 @@ resource "azurerm_key_vault" "kv1" {
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
   purge_protection_enabled    = false
+  network_acls {
+    default_action = "Deny"
+    bypass = "AzureServices"
+    #virtual_network_subnet_ids = [azurerm_subnet.region1-hub1-subnet,azurerm_subnet.region2-hub1-subnet, azurerm_network_interface.region1-anics[count.index].id, azurerm_network_interface.region2-anics[count.index].id ]
+    virtual_network_subnet_ids = concat(
+      [azurerm_subnet.region1-hub1-subnet.id, azurerm_subnet.region2-hub1-subnet.id],
+      azurerm_network_interface.region1-anics[*].id,
+      azurerm_network_interface.region2-anics[*].id
+    )
+  }
 
   sku_name = "standard"
 
@@ -207,7 +224,8 @@ resource "azurerm_key_vault" "kv1" {
       "Get",
     ]
   }
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -215,10 +233,21 @@ resource "random_password" "vmpassword" {
   length  = 20
   special = true
 }
-resource "azurerm_key_vault_secret" "vmpassword" {
-  name         = "vmpassword"
+resource "azurerm_key_vault_secret" "vmpassword1" {
+  name         = "vmpassword1"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
+  content_type = "Region1 VM Password Secret"
+  expiration_date = local.expiration_date
+  depends_on   = [azurerm_key_vault.kv1]
+}
+
+resource "azurerm_key_vault_secret" "vmpassword2" {
+  name         = "vmpassword2"
+  value        = random_password.vmpassword.result
+  key_vault_id = azurerm_key_vault.kv1.id
+  content_type = "Region2 VM Password Secret"
+  expiration_date = local.expiration_date
   depends_on   = [azurerm_key_vault.kv1]
 }
 
@@ -234,7 +263,8 @@ resource "azurerm_network_interface" "region1-anics" {
     subnet_id                     = azurerm_subnet.region1-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -249,7 +279,8 @@ resource "azurerm_network_interface" "region1-bnics" {
     subnet_id                     = azurerm_subnet.region1-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -265,7 +296,8 @@ resource "azurerm_network_interface" "region2-anics" {
     subnet_id                     = azurerm_subnet.region2-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -280,7 +312,8 @@ resource "azurerm_network_interface" "region2-bnics" {
     subnet_id                     = azurerm_subnet.region2-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -292,7 +325,8 @@ resource "azurerm_availability_set" "region1-asa" {
   resource_group_name         = azurerm_resource_group.rg1.name
   platform_fault_domain_count = 2
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -302,7 +336,8 @@ resource "azurerm_availability_set" "region1-asb" {
   resource_group_name         = azurerm_resource_group.rg1.name
   platform_fault_domain_count = 2
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -313,7 +348,8 @@ resource "azurerm_availability_set" "region2-asa" {
   resource_group_name         = azurerm_resource_group.rg2.name
   platform_fault_domain_count = 2
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -323,13 +359,15 @@ resource "azurerm_availability_set" "region2-asb" {
   resource_group_name         = azurerm_resource_group.rg2.name
   platform_fault_domain_count = 2
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
 
 
 # Virtual Machines 
+# NTS - I need to add in a custom ext script to install Hyper-V, IIS, and potentially create a VM within HyperV for testing.
 resource "azurerm_windows_virtual_machine" "region1-vmsa" {
   count               = var.servercounta
   name                = "vm-${var.region1code}-a-${count.index}"
@@ -338,13 +376,14 @@ resource "azurerm_windows_virtual_machine" "region1-vmsa" {
   location            = var.region1
   size                = "Standard_D2s_v4"
   admin_username      = "azureadmin"
-  admin_password      = azurerm_key_vault_secret.vmpassword.value
+  admin_password      = azurerm_key_vault_secret.vmpassword1.value
   availability_set_id = azurerm_availability_set.region1-asa.id
   network_interface_ids = [
     azurerm_network_interface.region1-anics[count.index].id,
   ]
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 
@@ -369,13 +408,14 @@ resource "azurerm_windows_virtual_machine" "region1-vmsb" {
   location            = var.region1
   size                = "Standard_D2s_v4"
   admin_username      = "azureadmin"
-  admin_password      = azurerm_key_vault_secret.vmpassword.value
+  admin_password      = azurerm_key_vault_secret.vmpassword2.value
   availability_set_id = azurerm_availability_set.region1-asb.id
   network_interface_ids = [
     azurerm_network_interface.region1-bnics[count.index].id,
   ]
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 
@@ -400,13 +440,14 @@ resource "azurerm_windows_virtual_machine" "region2-avms" {
   location            = var.region2
   size                = "Standard_D2s_v4"
   admin_username      = "azureadmin"
-  admin_password      = azurerm_key_vault_secret.vmpassword.value
+  admin_password      = azurerm_key_vault_secret.vmpassword2.value
   availability_set_id = azurerm_availability_set.region2-asa.id
   network_interface_ids = [
     azurerm_network_interface.region2-anics[count.index].id,
   ]
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 
@@ -430,13 +471,14 @@ resource "azurerm_windows_virtual_machine" "region2-bvms" {
   location            = var.region2
   size                = "Standard_D2s_v4"
   admin_username      = "azureadmin"
-  admin_password      = azurerm_key_vault_secret.vmpassword.value
+  admin_password      = azurerm_key_vault_secret.vmpassword2.value
   availability_set_id = azurerm_availability_set.region2-asb.id
   network_interface_ids = [
     azurerm_network_interface.region2-bnics[count.index].id,
   ]
 
-  tags = {
+tags = {
+    Owner = var.owner_tag
     Environment = var.environment_tag
   }
 
@@ -747,8 +789,9 @@ resource "azurerm_traffic_manager_profile" "tm1" {
     tolerated_number_of_failures = 3
   }
 
-  tags = {
-    environment = var.environment_tag
+tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
   }
 }
 resource "azurerm_traffic_manager_azure_endpoint" "region1-tme1" {
@@ -762,4 +805,37 @@ resource "azurerm_traffic_manager_azure_endpoint" "region2-tme1" {
   profile_id         = azurerm_traffic_manager_profile.tm1.id
   weight             = 100
   target_resource_id = azurerm_public_ip.region2-fwpip.id
+}
+
+# This section is to report on the VM's activity. Will be used as part of the env to simulate a FA relying on a VM to be up and running
+
+# Storage Account
+resource "azurerm_storage_account" "region1-sa1" {
+  name                     = "${var.region1}sa01"
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  account_tier             = var.region1accounttier
+  account_replication_type = var.region1art
+  min_tls_version = "TLS1_2"
+}
+
+# App Service Plan
+resource "azurerm_service_plan" "region1-asp" {
+  name                = "${var.region1}-asp-01"
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  os_type             = var.region1-asp-os
+  sku_name            = var.region1-asp-sku
+}
+
+# Function App
+resource "azurerm_linux_function_app" "region1-fa" {
+  name                       = "${var.region1}-fa01"
+  resource_group_name      = azurerm_resource_group.rg1.name
+  location                 = azurerm_resource_group.rg1.location
+  service_plan_id        = azurerm_service_plan.region1-asp.id
+  storage_account_name       = azurerm_storage_account.region1-sa1.name
+  storage_account_access_key = azurerm_storage_account.region1-sa1.primary_access_key
+  https_only = "true"
+  site_config {}
 }
