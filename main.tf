@@ -247,6 +247,7 @@ resource "azurerm_key_vault" "kv1" {
   sku_name = "standard"
 
   access_policy {
+    # Existing access policy for the current user
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
@@ -262,8 +263,19 @@ resource "azurerm_key_vault" "kv1" {
       "Get",
     ]
   }
+
+  # New access policy for the Function App's managed identity
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = azurerm_linux_function_app.uks-fa.identity.principal_id
+
+    secret_permissions = [
+      "Get", "List",
+    ]
+  }
+
   tags = {
-    Owner = var.owner_tag
+    Owner       = var.owner_tag
     Environment = var.environment_tag
   }
 }
@@ -981,6 +993,19 @@ resource "azurerm_linux_function_app" "uks-fa" {
   storage_account_access_key = azurerm_storage_account.uks-sa1.primary_access_key
   https_only = "true"
   site_config {}
+
+  app_settings = {
+    "FUNCTIONS_WORKER_RUNTIME" = "dotnet"   # Example of a runtime setting, adjust according to your needs
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    # Adding secrets from Key Vault
+    "appsecret1" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.appsecret1.id})"
+    "appsecret2" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.appsecret2.id})"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
