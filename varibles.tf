@@ -50,3 +50,28 @@ variable "region2code" {
   description = "Server Naming Code for Region 2"
   type        = string
 }
+
+variable "region1accounttier" {
+  description = "Account Tier for Region 1"
+  type        = string
+}
+
+variable "region1art" {
+  description = "Account Replication Type for Region 1"
+  type        = string
+}
+
+variable "region1-asp-os" {
+  description = "ASP OS Type for Region 1"
+  type        = string
+}
+
+variable "region1-asp-sku" {
+  description = "ASP SKU type"
+  type = string
+}
+
+variable "days_to_expire" {
+  description = "Days until Secret/Cert expire"
+  type = number
+}
