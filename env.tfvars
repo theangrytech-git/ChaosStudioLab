@@ -1,5 +1,6 @@
 environment_tag = "ChaosStudioDemo"
 owner_tag       = "dacat"
+health_tag = "Active"
 labname         = "chaos-demo"
 uks         = "uksouth"
 ukscode     = "uks"

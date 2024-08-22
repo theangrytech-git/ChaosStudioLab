@@ -8,6 +8,11 @@ variable "owner_tag" {
   description = "Owner tag value"
 }
 
+variable "health_tag" {
+  type        = string
+  description = "Health tag value"
+}
+
 variable "labname" {
   type        = string
   description = "Lab name"

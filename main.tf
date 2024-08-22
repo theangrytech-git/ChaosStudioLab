@@ -450,7 +450,8 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
-  }
+    Health  = var.health_tag
+    }
 
   os_disk {
     caching              = "ReadWrite"
@@ -484,6 +485,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
+    Health  = var.health_tag
   }
 
   os_disk {
@@ -530,6 +532,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
+    Health  = var.health_tag
   }
 
   os_disk {
@@ -1012,6 +1015,7 @@ resource "azurerm_linux_function_app" "uks-fa" {
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
+    Health = var.health_tag
   }
 }
 
