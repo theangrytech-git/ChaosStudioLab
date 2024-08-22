@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Health Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .healthy {
+            color: green;
+        }
+        .unknown {
+            color: amber;
+        }
+        .error {
+            color: red;
+        }
+        .secret {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Resource Health Dashboard</h1>
+
+<h2>Virtual Machines</h2>
+<table>
+    <thead>
+        <tr>
+            <th>VM Name</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody id="vm-table-body">
+        <!-- Data will be populated here -->
+    </tbody>
+</table>
+
+<h2>Function Apps</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Function App Name</th>
+            <th>Status</th>
+            <th>AppSecret1</th>
+            <th>AppSecret2</th>
+        </tr>
+    </thead>
+    <tbody id="fa-table-body">
+        <!-- Data will be populated here -->
+    </tbody>
+</table>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch the data from the Function App API
+        fetch('/api/healthcheck')
+            .then(response => response.json())
+            .then(data => {
+                // Populate the VM Table
+                const vmTableBody = document.getElementById('vm-table-body');
+                data.virtual_machines.forEach(vm => {
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    const statusCell = document.createElement('td');
+                    
+                    nameCell.textContent = vm.vm_name;
+                    statusCell.textContent = vm.status;
+                    
+                    // Apply color based on status
+                    if (vm.color === 'green') {
+                        statusCell.classList.add('healthy');
+                    } else if (vm.color === 'amber') {
+                        statusCell.classList.add('unknown');
+                    } else if (vm.color === 'red') {
+                        statusCell.classList.add('error');
+                    }
+                    
+                    row.appendChild(nameCell);
+                    row.appendChild(statusCell);
+                    vmTableBody.appendChild(row);
+                });
+
+                // Populate the Function App Table
+                const faTableBody = document.getElementById('fa-table-body');
+                data.function_apps.forEach(fa => {
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    const statusCell = document.createElement('td');
+                    const appSecret1Cell = document.createElement('td');
+                    const appSecret2Cell = document.createElement('td');
+                    
+                    nameCell.textContent = fa.fa_name;
+                    statusCell.textContent = fa.status;
+                    appSecret1Cell.textContent = fa.appsecret1 ? '********' : 'Not Available';
+                    appSecret2Cell.textContent = fa.appsecret2 ? '********' : 'Not Available';
+
+                    // Apply color based on status
+                    if (fa.color === 'green') {
+                        statusCell.classList.add('healthy');
+                    } else if (fa.color === 'amber') {
+                        statusCell.classList.add('unknown');
+                    } else if (fa.color === 'red') {
+                        statusCell.classList.add('error');
+                    }
+
+                    row.appendChild(nameCell);
+                    row.appendChild(statusCell);
+                    row.appendChild(appSecret1Cell);
+                    row.appendChild(appSecret2Cell);
+                    faTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching health status:', error));
+    });
+</script>
+
+</body>
+</html>
