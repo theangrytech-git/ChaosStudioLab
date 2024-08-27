@@ -9,8 +9,8 @@ from azure.keyvault.secrets import SecretClient
 
 # Set up Azure credentials
 subscription_id = os.getenv('AZURE_SUBSCRIPTION_ID')
-tag_key = os.getenv('TARGET_TAG_KEY', 'Environment')  # Change this to your desired tag key
-tag_value = os.getenv('TARGET_TAG_VALUE', 'Production')  # Change this to your desired tag value
+tag_key = os.getenv('TARGET_TAG_KEY', 'Health')  # Change this to your desired tag key
+tag_value = os.getenv('TARGET_TAG_VALUE', 'Active')  # Change this to your desired tag value
 
 # Azure SDK Clients
 credentials = DefaultAzureCredential()
@@ -106,8 +106,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             health_status = check_vm_health(resource["name"], resource["resource_group"])
             response_data["virtual_machines"].append(health_status)
         # Add logic for VM Scale Sets and Availability Sets here if needed
-        # elif resource["type"] == "Microsoft.Compute/virtualMachineScaleSets":
-        #     pass
+        elif resource["type"] == "Microsoft.Compute/virtualMachineScaleSets":
+             pass
         # elif resource["type"] == "Microsoft.Compute/availabilitySets":
         #     pass
 
