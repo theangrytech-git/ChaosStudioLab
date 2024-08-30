@@ -1215,7 +1215,7 @@ resource "azurerm_role_assignment" "akscluster" {
 
 resource "azurerm_role_assignment" "cosmosdb" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
-  role_definition_name = "Azure Cosmos DB Operator"
+  role_definition_name = "Cosmos DB Operator"
   scope          = azurerm_resource_group.uks.id
 }
 
@@ -1282,11 +1282,11 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-  target_type = "Microsoft-Agent"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#   target_type = "Microsoft-Agent"
+# }
 
 # resource "azurerm_chaos_studio_target" "uks_vmsb_ab" {
 #   location = azurerm_resource_group.uks.location
