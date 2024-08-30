@@ -2,23 +2,43 @@
 
 PROJECT NAME:       AZURE-CHAOS-STUDIO
 CREATED BY:         THEANGRYTECH-GIT
-REPO:               
+REPO:
 DESCRIPTION:        This project sets up an Azure environment in UK South and
-*TO BE CONFIRMED* which will deploy in each region: VM's in an Availability Set, 
-VM Scale Sets, NSG's, Key Vaults, Traffic Manager, Firewall, Route Table, 
+*TO BE CONFIRMED* which will deploy in each region: VM's in an Availability Set,
+VM Scale Sets, NSG's, Key Vaults, Traffic Manager, Firewall, Route Table,
 Storage Accounts, Load Balancers, Application Insights, Managed Identities,
 Function Apps, App Service Plans, and some Chaos Studio experiments.
 
 *******************************************************************************/
 
-/*******
-Note to self - can not deploy to UK West as Chaos Studio is not used in UK West. Commented out for time being, so I can get it running in a single Region first.
-*******/
+/*******************************************************************************
+Notes:
+Chaos Studio is only available in select regions:
+https://azure.microsoft.com/en-gb/explore/global-infrastructure/products-by-region/?products=chaos-studio#products-by-region_tab5
+My environment is only available in UK South/West - to use this environment,
+please replace any references to UK West (UKW) to a region that you want to
+use that's supported by Chaos Studio, and then un-comment those sections.
+*******************************************************************************/
 
+/*******************************************************************************
+********************************************************************************
+                          CREATE LAB ENVIRONMENT
+/*******************************************************************************
+*******************************************************************************/
+
+
+
+/*******************************************************************************
+                         CREATE LOCAL VARIABLES
+*******************************************************************************/
 locals {
   days_to_hours = var.days_to_expire * 24
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
 }
+
+/*******************************************************************************
+                         CREATE RANDOM GENERATOR
+*******************************************************************************/
 
 resource "random_string" "random" {
   length           = 3
@@ -40,7 +60,9 @@ resource "random_id" "dns-name" {
   byte_length = 4
 }
 
-# Resource Groups
+/*******************************************************************************
+                         CREATE RESOURCE GROUPS
+*******************************************************************************/
 resource "azurerm_resource_group" "uks" {
   name     = "rg-${var.uks}-${var.labname}-01"
   location = var.uks
@@ -59,9 +81,9 @@ resource "azurerm_resource_group" "uks" {
 #   }
 # }
 
-
-
-# VNETs
+/*******************************************************************************
+                         CREATE VIRTUAL NETWORKS
+*******************************************************************************/
 resource "azurerm_virtual_network" "uks-hub1" {
   name                = "vnet-${var.uks}-hub-01"
   location            = var.uks
@@ -83,8 +105,9 @@ resource "azurerm_virtual_network" "uks-hub1" {
 #   }
 # }
 
-# Subnets
-# UK South
+/*******************************************************************************
+                         CREATE SUBNETS
+*******************************************************************************/
 resource "azurerm_subnet" "uks-hub1-subnet" {
   name                 = "snethost-${var.uks}-vnet-hub-01"
   resource_group_name  = azurerm_resource_group.uks.name
@@ -111,7 +134,6 @@ resource "azurerm_subnet" "uks-hub1-subnetfwman" {
   address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 3)]
 }
 
-# UK West
 # resource "azurerm_subnet" "ukw-hub1-subnet" {
 #   name                 = "snet-${var.ukw}-vnet-hub-01"
 #   resource_group_name  = azurerm_resource_group.ukw.name
@@ -138,7 +160,9 @@ resource "azurerm_subnet" "uks-hub1-subnetfwman" {
 #   address_prefixes     = [cidrsubnet("${var.ukwcidr}", 5, 3)]
 # }
 
-# Peerings
+/*******************************************************************************
+                         CREATE NETWORK PEERINGS
+*******************************************************************************/
 # resource "azurerm_virtual_network_peering" "hub1-to-hub2" {
 #   name                      = "${var.uks}-hub-to-${var.ukw}-hub"
 #   resource_group_name       = azurerm_resource_group.uks.name
@@ -152,7 +176,9 @@ resource "azurerm_subnet" "uks-hub1-subnetfwman" {
 #   remote_virtual_network_id = azurerm_virtual_network.uks-hub1.id
 # }
 
-# NSGs
+/*******************************************************************************
+                         CREATE NETWORK SECURITY GROUPS
+*******************************************************************************/
 resource "azurerm_network_security_group" "uks-nsg1" {
   name                = "nsg-snet-${var.uks}-vnet-hub-01"
   location            = var.uks
@@ -184,7 +210,9 @@ resource "azurerm_subnet_network_security_group_association" "uks-hub" {
 # }
 
 
-# Route Tables
+/*******************************************************************************
+                         CREATE ROUTE TABLES
+*******************************************************************************/
 resource "azurerm_route_table" "uks-rt1" {
   name                = "rtbl-${var.uks}-01"
   location            = var.uks
@@ -219,7 +247,9 @@ resource "azurerm_subnet_route_table_association" "uks" {
 #   route_table_id = azurerm_route_table.ukw-rt1.id
 # }
 
-# Key Vault
+/*******************************************************************************
+                         CREATE KEY VAULT
+*******************************************************************************/
 
 data "azurerm_client_config" "current" {}
 
@@ -234,44 +264,39 @@ resource "azurerm_key_vault" "kv1" {
   purge_protection_enabled    = false
   network_acls {
     default_action = "Deny"
-    bypass = "AzureServices"
-    #virtual_network_subnet_ids = [azurerm_subnet.uks-hub1-subnet,azurerm_subnet.ukw-hub1-subnet, azurerm_network_interface.uks-anics[count.index].id, azurerm_network_interface.ukw-anics[count.index].id ]
+    bypass         = "AzureServices"
     virtual_network_subnet_ids = concat(
-      [azurerm_subnet.uks-hub1-subnet.id,], #azurerm_subnet.ukw-hub1-subnet.id],
+      [azurerm_subnet.uks-hub1-subnet.id]
     )
     ip_rules = [
-      "67.208.52.126", # Add your client IP here
+      "67.208.52.129",
+      "88.97.161.207",
+      "141.170.17.195",
+      "80.169.189.194",
     ]
   }
 
   sku_name = "standard"
 
   access_policy {
-    # Existing access policy for the current user
+    # Access policy for the current user
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
-    key_permissions = [
-      "Get",
-    ]
+    key_permissions = ["Get"]
 
     secret_permissions = [
       "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
     ]
 
-    storage_permissions = [
-      "Get",
-    ]
+    storage_permissions = ["Get"]
   }
 
-  # New access policy for the Function App's managed identity
   access_policy {
+    # Access policy for Function App's managed identity
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_linux_function_app.uks-fa.identity.principal_id
-
-    secret_permissions = [
-      "Get", "List",
-    ]
+    object_id = data.azurerm_linux_function_app.uks-fa.identity[0].principal_id
+    secret_permissions = ["Get", "List"]
   }
 
   tags = {
@@ -280,13 +305,37 @@ resource "azurerm_key_vault" "kv1" {
   }
 }
 
+/*******************************************************************************
+                         CREATE ACCESS POLICIES
+*******************************************************************************/
+
+resource "azurerm_key_vault_access_policy" "kv1_vmsa_access" {
+  key_vault_id = azurerm_key_vault.kv1.id
+
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = azurerm_windows_virtual_machine.uks-vmsa[0].identity[0].principal_id
+
+  secret_permissions = ["Get", "List"]
+}
+
+resource "azurerm_key_vault_access_policy" "kv1_vmsb_access" {
+  key_vault_id = azurerm_key_vault.kv1.id
+
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = azurerm_windows_virtual_machine.uks-vmsb[0].identity[0].principal_id
+
+  secret_permissions = ["Get", "List"]
+}
+
+/*******************************************************************************
+                         CREATE KEY VAULT SECRETS
+*******************************************************************************/
 resource "azurerm_key_vault_secret" "vmpassword1" {
   name         = "vmpassword1"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
   content_type = "uks VM Password Secret"
   expiration_date = local.expiration_date
-  depends_on   = [azurerm_key_vault.kv1]
 }
 
 resource "azurerm_key_vault_secret" "vmpassword2" {
@@ -295,28 +344,77 @@ resource "azurerm_key_vault_secret" "vmpassword2" {
   key_vault_id = azurerm_key_vault.kv1.id
   content_type = "ukw VM Password Secret"
   expiration_date = local.expiration_date
-  depends_on   = [azurerm_key_vault.kv1]
 }
 
-resource "azurerm_key_vault_secret" "appsecret1" {
-  name         = "appsecret1"
-  value        = random_password.vmpassword.result
-  key_vault_id = azurerm_key_vault.kv1.id
-  content_type = "FA App Secret 1"
-  expiration_date = local.expiration_date
-  depends_on   = [azurerm_key_vault.kv1]
+# resource "azurerm_key_vault_secret" "appsecret1" {
+#   name         = "appsecret1"
+#   value        = random_password.vmpassword.result
+#   key_vault_id = azurerm_key_vault.kv1.id
+#   content_type = "FA App Secret 1"
+#   expiration_date = local.expiration_date
+#   #depends_on   = [azurerm_key_vault.kv1]
+# }
+
+# resource "azurerm_key_vault_secret" "appsecret2" {
+#   name         = "appsecret2"
+#   value        = random_password.vmpassword.result
+#   key_vault_id = azurerm_key_vault.kv1.id
+#   content_type = "FA App Secret 2"
+#   expiration_date = local.expiration_date
+#   #depends_on   = [azurerm_key_vault.kv1]
+# }
+
+/*******************************************************************************
+                         CREATE APP CONFIGS
+*******************************************************************************/
+/***
+NOTE - I've added this section in to break a circular dependancy with KV/VM/Secrets.
+I'm going to leave this in for now, as there's some plan
+***/
+resource "azurerm_app_configuration" "uks-config" {
+  name                = "appcfg-${var.uks}-01"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = var.uks
+
+  tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
+    Health = var.health_tag
+  }
 }
 
-resource "azurerm_key_vault_secret" "appsecret2" {
-  name         = "appsecret2"
-  value        = random_password.vmpassword.result
-  key_vault_id = azurerm_key_vault.kv1.id
-  content_type = "FA App Secret 2"
-  expiration_date = local.expiration_date
-  depends_on   = [azurerm_key_vault.kv1]
+resource "azurerm_app_configuration_key" "ck1" {
+  configuration_store_id = azurerm_app_configuration.uks-config.id
+  key                    = "key1"
+  type                   = "kv"
+  label                  = "appsecret1"
+  value = random_password.vmpassword.result
+
+  depends_on = [
+    azurerm_role_assignment.appconf_dataowner
+  ]
+}
+resource "azurerm_app_configuration_key" "ck2" {
+  configuration_store_id = azurerm_app_configuration.uks-config.id
+  key                    = "key2"
+  type                   = "kv"
+  label                  = "appsecret2"
+  value    = random_password.vmpassword.result
+
+  depends_on = [
+    azurerm_role_assignment.appconf_dataowner
+  ]
 }
 
-# NICs
+resource "azurerm_role_assignment" "appconf_dataowner" {
+  scope                = azurerm_app_configuration.uks-config.id
+  role_definition_name = "App Configuration Data Owner"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+/*******************************************************************************
+                         CREATE NICS
+*******************************************************************************/
 resource "azurerm_network_interface" "uks-anics" {
   count               = var.servercounta
   name                = "nic-${var.uks}-a-${count.index}"
@@ -383,7 +481,9 @@ resource "azurerm_network_interface" "uks-bnics" {
 #   }
 # }
 
-# Availability Sets
+/*******************************************************************************
+                         CREATE AVAILABILITY SETS
+*******************************************************************************/
 resource "azurerm_availability_set" "uks-asa" {
   name                        = "as-${var.uks}-a"
   location                    = var.uks
@@ -430,9 +530,65 @@ resource "azurerm_availability_set" "uks-asb" {
 #   }
 # }
 
+/*******************************************************************************
+                    CREATE VIRTUAL MACHINE SCALE SETS
+*******************************************************************************/
 
-# Virtual Machines 
-# NTS - I need to add in a custom ext script to install Hyper-V, IIS, and potentially create a VM within HyperV for testing.
+resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
+  count               = var.vmsscounta
+  name                = "${var.ukscode}-${count.index}"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = var.uks
+  sku                 = "Standard_D2s_v4"
+  instances           = 5
+  admin_username      = "azureadmin"
+  admin_password      = azurerm_key_vault_secret.vmpassword1.value
+  upgrade_mode        = "Automatic"
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-Datacenter"
+    version   = "latest"
+  }
+
+  network_interface {
+    name    = "win-vmss-nic-${random_string.random.result}"
+    primary = true
+
+    ip_configuration {
+      name      = "internal"
+      primary   = true
+      subnet_id = azurerm_subnet.uks-hub1-subnet.id
+    }
+  }
+
+  boot_diagnostics {
+    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
+  }
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = {
+    Owner       = var.owner_tag
+    Environment = var.environment_tag
+    Health      = var.health_tag
+  }
+}
+
+/*******************************************************************************
+                         CREATE VIRTUAL MACHINES
+*******************************************************************************/
+/***
+need to add in a custom ext script to install Hyper-V, IIS, and potentially create a VM within HyperV for testing.
+***/
+
 resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   count               = var.servercounta
   name                = "vm-${var.ukscode}-a-${count.index}"
@@ -465,55 +621,12 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
     version   = "latest"
   }
   boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint 
+    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
+  }
+  identity {
+    type = "SystemAssigned"
   }
 }
-
-# Virtual Machine Scale Sets
-resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
-  count               = var.vmsscounta
-  name                = "${var.ukscode}-${count.index}"
-  depends_on          = [azurerm_key_vault.kv1]
-  resource_group_name = azurerm_resource_group.uks.name
-  location            = var.uks
-  sku                = "Standard_D2s_v4"
-  instances = 5
-  admin_username      = "azureadmin"
-  admin_password      = azurerm_key_vault_secret.vmpassword1.value
-
-
-  tags = {
-    Owner = var.owner_tag
-    Environment = var.environment_tag
-    Health  = var.health_tag
-  }
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "StandardSSD_LRS"
-  }
-
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2022-Datacenter"
-    version   = "latest"
-  }
-  network_interface {
-    name    = "win-vmss-nic-${random_string.random.result}"
-    primary = true
-
-    ip_configuration {
-      name      = "internal"
-      primary   = true
-      subnet_id = azurerm_subnet.uks-hub1-subnet.id
-    }
-  }
-  boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint 
-  }
-}
-
 
 resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   count               = var.servercountb
@@ -547,7 +660,10 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
     version   = "latest"
   }
   boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint 
+    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
+  }
+  identity {
+    type = "SystemAssigned"
   }
 }
 
@@ -582,7 +698,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 #     version   = "latest"
 #   }
 #   boot_diagnostics {
-#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint 
+#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint
 #   }
 # }
 # resource "azurerm_windows_virtual_machine" "ukw-bvms" {
@@ -616,13 +732,13 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 #     version   = "latest"
 #   }
 #   boot_diagnostics {
-#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint 
+#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint
 #   }
 # }
 
-
-
-#Public IPs
+/*******************************************************************************
+                         CREATE PUBLIC IP
+*******************************************************************************/
 
 resource "azurerm_public_ip" "uks-fwpip" {
   name                = "pip-fw-${var.uks}-01"
@@ -639,6 +755,7 @@ resource "azurerm_public_ip" "uks-fwmanpip" {
   allocation_method   = "Static"
   sku                 = "Standard"
 }
+
 # resource "azurerm_public_ip" "ukw-fwpip" {
 #   name                = "pip-fw-${var.ukw}-01"
 #   location            = var.ukw
@@ -647,6 +764,7 @@ resource "azurerm_public_ip" "uks-fwmanpip" {
 #   sku                 = "Standard"
 #   domain_name_label   = "pip-${var.ukwcode}-${random_id.dns-name.hex}"
 # }
+
 # resource "azurerm_public_ip" "ukw-fwmanpip" {
 #   name                = "pip-fwman-${var.ukw}-01"
 #   location            = var.ukw
@@ -655,7 +773,9 @@ resource "azurerm_public_ip" "uks-fwmanpip" {
 #   sku                 = "Standard"
 # }
 
-# Firewalls
+/*******************************************************************************
+                         CREATE FIREWALLS
+*******************************************************************************/
 resource "azurerm_firewall" "uks-fw1" {
   name                = "fw-${var.uks}-01"
   location            = var.uks
@@ -677,6 +797,7 @@ resource "azurerm_firewall" "uks-fw1" {
   }
 
 }
+
 # resource "azurerm_firewall" "ukw-fw1" {
 #   name                = "fw-${var.ukw}-01"
 #   location            = var.ukw
@@ -699,7 +820,9 @@ resource "azurerm_firewall" "uks-fw1" {
 
 # }
 
-# Firewall Rules
+/*******************************************************************************
+                         CREATE FIREWALL RULES
+*******************************************************************************/
 resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
   name                = "${var.uks}-outbound"
   azure_firewall_name = azurerm_firewall.uks-fw1.name
@@ -714,6 +837,7 @@ resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
     protocols             = ["Any"]
   }
 }
+
 # resource "azurerm_firewall_network_rule_collection" "ukw-outbound" {
 #   name                = "${var.ukw}-outbound"
 #   azure_firewall_name = azurerm_firewall.ukw-fw1.name
@@ -729,7 +853,9 @@ resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
 #   }
 # }
 
-# NAT Rules
+/*******************************************************************************
+                         CREATE NAT RULES
+*******************************************************************************/
 resource "azurerm_firewall_nat_rule_collection" "uks-nat" {
   name                = "${var.uks}-nat1"
   azure_firewall_name = azurerm_firewall.uks-fw1.name
@@ -793,7 +919,9 @@ resource "azurerm_firewall_nat_rule_collection" "uks-nat" {
 #   }
 # }
 
-# LBs
+/*******************************************************************************
+                         CREATE LOAD BALANCERS
+*******************************************************************************/
 resource "azurerm_lb" "uks-lb" {
   name                = "lb-int-${var.uks}"
   location            = var.uks
@@ -807,6 +935,7 @@ resource "azurerm_lb" "uks-lb" {
     private_ip_address_allocation = "static"
   }
 }
+
 # resource "azurerm_lb" "ukw-lb" {
 #   name                = "lb-int-${var.ukw}"
 #   location            = var.ukw
@@ -820,7 +949,10 @@ resource "azurerm_lb" "uks-lb" {
 #     private_ip_address_allocation = "static"
 #   }
 # }
-# Probes
+
+/*******************************************************************************
+                         CREATE LB PROBES
+*******************************************************************************/
 resource "azurerm_lb_probe" "uks-probe" {
   loadbalancer_id     = azurerm_lb.uks-lb.id
   name                = "http-probe"
@@ -837,7 +969,10 @@ resource "azurerm_lb_probe" "uks-probe" {
 #   interval_in_seconds = 60
 #   request_path        = "/"
 # }
-# Backend Pool
+
+/*******************************************************************************
+                         CREATE LB BACKEND POOLS
+*******************************************************************************/
 resource "azurerm_lb_backend_address_pool" "uks-pool" {
   loadbalancer_id = azurerm_lb.uks-lb.id
   name            = "BackEndAddressPool"
@@ -846,7 +981,10 @@ resource "azurerm_lb_backend_address_pool" "uks-pool" {
 #   loadbalancer_id = azurerm_lb.ukw-lb.id
 #   name            = "BackEndAddressPool"
 # }
-# NIC Association
+
+/*******************************************************************************
+                         CREATE LB NIC ASSOCIATION
+*******************************************************************************/
 resource "azurerm_network_interface_backend_address_pool_association" "uks-a" {
   count                   = var.servercounta
   network_interface_id    = azurerm_network_interface.uks-anics[count.index].id
@@ -871,7 +1009,10 @@ resource "azurerm_network_interface_backend_address_pool_association" "uks-b" {
 #   ip_configuration_name   = "${var.ukw}-nic-b-${count.index}-ipconfig"
 #   backend_address_pool_id = azurerm_lb_backend_address_pool.ukw-pool.id
 # }
-# Rules
+
+/*******************************************************************************
+                         CREATE LB RULES
+*******************************************************************************/
 resource "azurerm_lb_rule" "uks-rule" {
   loadbalancer_id                = azurerm_lb.uks-lb.id
   name                           = "LBRule"
@@ -893,7 +1034,9 @@ resource "azurerm_lb_rule" "uks-rule" {
 #   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.ukw-pool.id]
 # }
 
-# Traffic Manager
+/*******************************************************************************
+                         CREATE TRAFFIC MANAGER
+*******************************************************************************/
 resource "azurerm_traffic_manager_profile" "tm1" {
   name                   = "tm-${var.labname}"
   resource_group_name    = azurerm_resource_group.uks.name
@@ -931,9 +1074,15 @@ resource "azurerm_traffic_manager_azure_endpoint" "uks-tme1" {
 #   target_resource_id = azurerm_public_ip.ukw-fwpip.id
 # }
 
-# This section is to report on the VM's activity. Will be used as part of the env to simulate a FA relying on a VM to be up and running
+/*******************************************************************************
+                         CREATE STORAGE ACCOUNTS
+*******************************************************************************/
 
-# Storage Account
+/***
+This section is to report on the VM's activity. Will be used as part of the
+env to simulate a FA relying on a VM to be up and running.
+***/
+
 resource "azurerm_storage_account" "uks-sa1" {
   name                     = "sa${var.uks}01"
   resource_group_name      = azurerm_resource_group.uks.name
@@ -973,7 +1122,9 @@ resource "azurerm_storage_account" "uks-vm1" {
 #   }
 # }
 
-# App Service Plan
+/*******************************************************************************
+                         CREATE APP SERVICE PLAN
+*******************************************************************************/
 resource "azurerm_service_plan" "uks-asp" {
   name                = "${var.uks}-asp-01"
   resource_group_name      = azurerm_resource_group.uks.name
@@ -986,7 +1137,9 @@ resource "azurerm_service_plan" "uks-asp" {
   }
 }
 
-# Function App
+/*******************************************************************************
+                         CREATE FUNCTION APP
+*******************************************************************************/
 resource "azurerm_linux_function_app" "uks-fa" {
   name                       = "sa-${var.uks}-fa01"
   resource_group_name      = azurerm_resource_group.uks.name
@@ -996,16 +1149,15 @@ resource "azurerm_linux_function_app" "uks-fa" {
   storage_account_access_key = azurerm_storage_account.uks-sa1.primary_access_key
   https_only = "true"
   site_config {
-    linux_fx_version = "Python|3.10"  # Specifies Python 3.10 as the runtime
+    #linux_fx_version = "Python|3.10"  # Specifies Python 3.10 as the runtime
   }
-
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME" = "python"
     "PYTHON_VERSION"           = "3.10"
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
     # Adding secrets from Key Vault
-    "appsecret1" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.appsecret1.id})"
-    "appsecret2" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.appsecret2.id})"
+    "appsecret1" = "${azurerm_app_configuration_key.ck1.value}"
+    "appsecret2" = "${azurerm_app_configuration_key.ck2.value})"
   }
 
   identity {
@@ -1019,5 +1171,107 @@ resource "azurerm_linux_function_app" "uks-fa" {
   }
 }
 
-# Chaos Studio
-# To be added in after setting up lab
+data "azurerm_linux_function_app" "uks-fa" {
+  name = azurerm_linux_function_app.uks-fa.name
+  resource_group_name = azurerm_linux_function_app.uks-fa.resource_group_name
+}
+
+/*******************************************************************************
+                         CREATE MANAGED IDENTITY
+*******************************************************************************/
+resource "azurerm_user_assigned_identity" "uai-uks" {
+  location            = azurerm_resource_group.uks.location
+  name                = "UAI-${var.uks}"
+  resource_group_name = azurerm_resource_group.uks.name
+}
+
+resource "azurerm_role_assignment" "vm_operator" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Virtual Machine Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "storage_blob_data_reader1" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Storage Account Contributor"
+  scope          = azurerm_storage_account.uks-sa1.id
+}
+
+resource "azurerm_role_assignment" "storage_blob_data_reader2" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Storage Account Contributor"
+  scope          = azurerm_storage_account.uks-vm1.id
+}
+
+resource "azurerm_role_assignment" "key_vault" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Key Vault Contributor"
+  scope          = azurerm_key_vault.kv1.id
+}
+
+
+/*******************************************************************************
+********************************************************************************
+                          CHAOS STUDIO SECTION
+/*******************************************************************************
+*******************************************************************************/
+
+/********************************************************************************
+                 ADD AGENT-BASED TARGETS TO CHAOS STUDIO
+********************************************************************************/
+resource "azurerm_chaos_microsoft_agent_target" "uks_vmsa_chaos" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  target_type = "Microsoft.Compute/virtualMachines"
+}
+
+resource "azurerm_chaos_microsoft_agent_target" "uks_vmsb_chaos" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
+  target_type = "Microsoft.Compute/virtualMachines"
+}
+
+resource "azurerm_chaos_microsoft_agent_target" "uks_vmssa_chaos" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
+  target_type = "Microsoft.Compute/virtualMachineScaleSets"
+}
+
+/********************************************************************************
+                 ADD SERVICE-BASED TARGETS TO CHAOS STUDIO
+********************************************************************************/
+resource "azurerm_chaos_target" "uks_vmsa_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  target_type = "Microsoft.Compute/virtualMachines"
+}
+
+resource "azurerm_chaos_target" "uks_vmsb_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
+  target_type = "Microsoft.Compute/virtualMachines"
+}
+
+resource "azurerm_chaos_target" "uks_vmssa_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
+  target_type = "Microsoft.Compute/virtualMachineScaleSets"
+}
+
+resource "azurerm_chaos_target" "uks_kv1_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_key_vault.kv1.id
+  target_type = "Microsoft.KeyVault/vaults"
+}
+
+resource "azurerm_chaos_target" "uks_nsg1_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_network_security_group.uks-nsg1.id
+  target_type = "Microsoft.Network/networkSecurityGroups"
+}
+
+resource "azurerm_chaos_target" "uks_fa1_service_direct" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_linux_function_app.uks-fa.id
+  target_type = "Microsoft.Web/sites"
+}
