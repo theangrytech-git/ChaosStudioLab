@@ -31,6 +31,10 @@ use that's supported by Chaos Studio, and then un-comment those sections.
 /*******************************************************************************
                          CREATE LOCAL VARIABLES
 *******************************************************************************/
+data "azurerm_subscription" "current" {}
+output "current_subscription_display_name" {
+value = data.azurerm_subscription.current
+}
 locals {
   days_to_hours = var.days_to_expire * 24
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
@@ -1185,30 +1189,89 @@ resource "azurerm_user_assigned_identity" "uai-uks" {
   resource_group_name = azurerm_resource_group.uks.name
 }
 
+resource "azurerm_role_assignment" "redis" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Redis Cache Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "domainname" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Classic Virtual Machine Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
 resource "azurerm_role_assignment" "vm_operator" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
   role_definition_name = "Virtual Machine Contributor"
   scope          = azurerm_resource_group.uks.id
 }
 
-resource "azurerm_role_assignment" "storage_blob_data_reader1" {
+resource "azurerm_role_assignment" "akscluster" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
-  role_definition_name = "Storage Account Contributor"
-  scope          = azurerm_storage_account.uks-sa1.id
+  role_definition_name = "Azure Kubernetes Service Cluster Admin Role"
+  scope          = azurerm_resource_group.uks.id
 }
 
-resource "azurerm_role_assignment" "storage_blob_data_reader2" {
+resource "azurerm_role_assignment" "cosmosdb" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
-  role_definition_name = "Storage Account Contributor"
-  scope          = azurerm_storage_account.uks-vm1.id
+  role_definition_name = "Azure Cosmos DB Operator"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "autoscale" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Web Plan Contributor"
+  scope          = azurerm_resource_group.uks.id
 }
 
 resource "azurerm_role_assignment" "key_vault" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
   role_definition_name = "Key Vault Contributor"
-  scope          = azurerm_key_vault.kv1.id
+  scope          = azurerm_resource_group.uks.id
 }
 
+resource "azurerm_role_assignment" "nsg" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Network Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "fa" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Website Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "servicebus" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Azure Service Bus Data Owner"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "eventhub" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Azure Event Hubs Data Owner"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "loadtest" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Load Test Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "storage_blob_data_reader" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Storage Account Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
+# resource "azurerm_role_assignment" "storage_blob_data_reader2" {
+#   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+#   role_definition_name = "Storage Account Contributor"
+#   scope          = azurerm_storage_account.uks-vm1.id
+# }
 
 /*******************************************************************************
 ********************************************************************************
@@ -1219,59 +1282,59 @@ resource "azurerm_role_assignment" "key_vault" {
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-resource "azurerm_chaos_microsoft_agent_target" "uks_vmsa_chaos" {
+resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
   location = azurerm_resource_group.uks.location
   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-  target_type = "Microsoft.Compute/virtualMachines"
+  target_type = "Microsoft-Agent"
 }
 
-resource "azurerm_chaos_microsoft_agent_target" "uks_vmsb_chaos" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
-  target_type = "Microsoft.Compute/virtualMachines"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmsb_ab" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
+#   target_type = "Microsoft-Agent"
+# }
 
-resource "azurerm_chaos_microsoft_agent_target" "uks_vmssa_chaos" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
-  target_type = "Microsoft.Compute/virtualMachineScaleSets"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmssa_ab" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
+#   target_type = "Microsoft-Agent"
+# }
 
 /********************************************************************************
                  ADD SERVICE-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-resource "azurerm_chaos_target" "uks_vmsa_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-  target_type = "Microsoft.Compute/virtualMachines"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmsa_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#   target_type = "Microsoft-VirtualMachine"
+# }
 
-resource "azurerm_chaos_target" "uks_vmsb_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
-  target_type = "Microsoft.Compute/virtualMachines"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmsb_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
+#   target_type = "Microsoft-VirtualMachine"
+# }
 
-resource "azurerm_chaos_target" "uks_vmssa_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
-  target_type = "Microsoft.Compute/virtualMachineScaleSets"
-}
+# resource "azurerm_chaos_studio_target" "uks_vmssa_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
+#   target_type = "Microsoft-VirtualMachineScaleSet"
+# }
 
-resource "azurerm_chaos_target" "uks_kv1_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_key_vault.kv1.id
-  target_type = "Microsoft.KeyVault/vaults"
-}
+# resource "azurerm_chaos_studio_target" "uks_kv1_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_key_vault.kv1.id
+#   target_type = "Microsoft-KeyVault"
+# }
 
-resource "azurerm_chaos_target" "uks_nsg1_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_network_security_group.uks-nsg1.id
-  target_type = "Microsoft.Network/networkSecurityGroups"
-}
+# resource "azurerm_chaos_studio_target" "uks_nsg1_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_network_security_group.uks-nsg1.id
+#   target_type = "Microsoft-NetworkSecurityGroup"
+# }
 
-resource "azurerm_chaos_target" "uks_fa1_service_direct" {
-  location = azurerm_resource_group.uks.location
-  target_resource_id = azurerm_linux_function_app.uks-fa.id
-  target_type = "Microsoft.Web/sites"
-}
+# resource "azurerm_chaos_studio_target" "uks_fa1_sd" {
+#   location = azurerm_resource_group.uks.location
+#   target_resource_id = azurerm_linux_function_app.uks-fa.id
+#   target_type = "	Microsoft-AppService"
+# }
