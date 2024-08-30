@@ -751,6 +751,10 @@ resource "azurerm_public_ip" "uks-fwpip" {
   allocation_method   = "Static"
   sku                 = "Standard"
   domain_name_label   = "pip-${var.ukscode}-${random_id.dns-name.hex}"
+    tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
+  }
 }
 resource "azurerm_public_ip" "uks-fwmanpip" {
   name                = "pip-fwman-${var.uks}-01"
@@ -758,6 +762,10 @@ resource "azurerm_public_ip" "uks-fwmanpip" {
   resource_group_name = azurerm_resource_group.uks.name
   allocation_method   = "Static"
   sku                 = "Standard"
+    tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
+  }
 }
 
 # resource "azurerm_public_ip" "ukw-fwpip" {
@@ -799,7 +807,10 @@ resource "azurerm_firewall" "uks-fw1" {
     subnet_id            = azurerm_subnet.uks-hub1-subnetfwman.id
     public_ip_address_id = azurerm_public_ip.uks-fwmanpip.id
   }
-
+  tags = {
+   Owner = var.owner_tag
+   Environment = var.environment_tag
+  }
 }
 
 # resource "azurerm_firewall" "ukw-fw1" {
@@ -937,6 +948,10 @@ resource "azurerm_lb" "uks-lb" {
     subnet_id                     = azurerm_subnet.uks-hub1-subnetlb.id
     private_ip_address            = cidrhost("${var.ukscidr}", 260)
     private_ip_address_allocation = "static"
+  }
+  tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
   }
 }
 
@@ -1282,11 +1297,11 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-# resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-#   target_type = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
+  location = azurerm_resource_group.uks.location
+  target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  target_type = "Microsoft-Agent"
+}
 
 # resource "azurerm_chaos_studio_target" "uks_vmsb_ab" {
 #   location = azurerm_resource_group.uks.location
