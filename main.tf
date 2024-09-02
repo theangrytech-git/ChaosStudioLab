@@ -76,6 +76,10 @@ resource "azurerm_resource_group" "uks" {
   }
 }
 
+output "id" {
+  value = azurerm_resource_group.uks.id
+}
+
 # resource "azurerm_resource_group" "ukw" {
 #   name     = "rg-${var.ukw}-${var.labname}-01"
 #   location = var.ukw
@@ -548,6 +552,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
   upgrade_mode        = "Automatic"
+  zones = ["1","2","3"]
 
   os_disk {
     caching              = "ReadWrite"
@@ -585,6 +590,74 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
     Health      = var.health_tag
   }
 }
+
+resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
+  name                = "${azurerm_windows_virtual_machine_scale_set.uks-vmssa.name}-autoscale"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = var.uks
+  target_resource_id  = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+  enabled             = true
+
+  profile {
+    name = "AutoScaleProfile"
+
+    capacity {
+      minimum = "1"  # Minimum number of instances
+      maximum = "5"  # Maximum number of instances
+      default = "1"  # Start with 1 instances
+    }
+
+    # Rule to scale out (add 1 VM) when CPU usage is above 50%
+    rule {
+      metric_trigger {
+        metric_name        = "Percentage CPU"
+        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+        operator           = "GreaterThan"
+        statistic          = "Average"
+        threshold          = 50
+        time_grain         = "PT1M"
+        time_window        = "PT5M"
+        time_aggregation = "Average"
+      }
+
+      scale_action {
+        direction = "Increase"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT1M"  # Add 1 VM every minute
+      }
+    }
+
+    # Rule to scale in (remove 1 VM) when CPU usage is below 50%
+    rule {
+      metric_trigger {
+        metric_name        = "Percentage CPU"
+        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+        operator           = "LessThan"
+        statistic          = "Average"
+        threshold          = 50
+        time_grain         = "PT1M"
+        time_window        = "PT5M"
+        time_aggregation = "Average"
+      }
+
+      scale_action {
+        direction = "Decrease"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT1M"  # Remove 1 VM every minute
+      }
+    }
+  }
+
+  notification {
+    email {
+      send_to_subscription_administrator    = false
+      send_to_subscription_co_administrator = false
+    }
+  }
+}
+
 
 /*******************************************************************************
                          CREATE VIRTUAL MACHINES
@@ -1204,6 +1277,16 @@ resource "azurerm_user_assigned_identity" "uai-uks" {
   resource_group_name = azurerm_resource_group.uks.name
 }
 
+/*******************************************************************************
+                         CREATE ROLE ASSIGNMENTS
+*******************************************************************************/
+
+resource "azurerm_role_assignment" "chaos_contributor" {
+  principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
+  role_definition_name = "Contributor"
+  scope          = azurerm_resource_group.uks.id
+}
+
 resource "azurerm_role_assignment" "redis" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
   role_definition_name = "Redis Cache Contributor"
@@ -1293,6 +1376,63 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
                           CHAOS STUDIO SECTION
 /*******************************************************************************
 *******************************************************************************/
+
+/*******************************************************************************
+                      REGISTER AZURE CHAOS PROVIDER
+*******************************************************************************/
+
+resource "null_resource" "register_chaos_provider" {
+  provisioner "local-exec" {
+    command = "az provider register --namespace Microsoft.Chaos"
+  }
+
+  # Ensure this runs only once by using a trigger
+    triggers = {
+    always_run = "${timestamp()}"
+  }
+}
+
+/********************************************************************************
+                            CREATE SERVICE PRINCIPAL
+********************************************************************************/
+resource "azuread_application" "cs_app" {
+  display_name = "chaos-studio-sp"
+}
+
+resource "azuread_service_principal" "cs_sp" {
+  application_id = azuread_application.cs_app.application_id
+}
+
+resource "azuread_service_principal_password" "cs_sp_pw" {
+  service_principal_id = azuread_service_principal.cs_sp.id
+  end_date             = local.expiration_date
+}
+
+output "client_id" {
+  value = azuread_service_principal.cs_sp.application_id
+}
+output "client_secret" {
+  value = azuread_service_principal_password.cs_sp_pw.value
+  sensitive = true
+}
+
+/********************************************************************************
+                           SERVICE PRINCIPAL ROLES
+********************************************************************************/
+resource "azurerm_role_assignment" "chaos_contributor_sp" {
+  principal_id   = azuread_service_principal.cs_sp.id
+  role_definition_name = "Chaos Contributor"
+  scope = azurerm_resource_group.uks.id
+  #scope          = data.azurerm_subscription.primary.id
+}
+
+# resource "azurerm_role_assignment" "vm_reader" {
+#   principal_id   = azuread_service_principal.example.id
+#   role_definition_name = "Reader"
+#   scope          = azurerm_windows_virtual_machine.uks-vmsa[0].id  # Replace with your VM's ID
+# }
+
+
 
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO

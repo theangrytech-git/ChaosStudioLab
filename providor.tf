@@ -23,6 +23,8 @@ provider "azurerm" {
   }
 }
 
+provider "azuread" {}
+
 provider "random" {
   # Configuration options
 }
