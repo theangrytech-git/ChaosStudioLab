@@ -35,6 +35,15 @@ data "azurerm_subscription" "current" {}
 output "current_subscription_display_name" {
 value = data.azurerm_subscription.current
 }
+
+data "external" "get_public_ip" {
+  program = ["python3", "${path.module}/get_public_ip.py"]
+}
+
+output "public_ip" {
+  value = data.external.get_public_ip.result["public_ip"]
+}
+
 locals {
   days_to_hours = var.days_to_expire * 24
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
@@ -277,10 +286,12 @@ resource "azurerm_key_vault" "kv1" {
       [azurerm_subnet.uks-hub1-subnet.id]
     )
     ip_rules = [
+      data.external.get_public_ip.result["public_ip"],
       "67.208.52.129",
       "88.97.161.207",
       "141.170.17.195",
       "80.169.189.194",
+      "88.97.160.245",
     ]
   }
 
@@ -592,10 +603,11 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
 }
 
 resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
-  name                = "${azurerm_windows_virtual_machine_scale_set.uks-vmssa.name}-autoscale"
+  count               = length(azurerm_windows_virtual_machine_scale_set.uks-vmssa)
+  name                = "${azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].name}-autoscale"
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
-  target_resource_id  = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+  target_resource_id  = azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].id
   enabled             = true
 
   profile {
@@ -611,7 +623,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
-        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].id
         operator           = "GreaterThan"
         statistic          = "Average"
         threshold          = 50
@@ -632,7 +644,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
     rule {
       metric_trigger {
         metric_name        = "Percentage CPU"
-        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa.id
+        metric_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].id
         operator           = "LessThan"
         statistic          = "Average"
         threshold          = 50
@@ -1437,42 +1449,73 @@ resource "azurerm_role_assignment" "chaos_contributor_sp" {
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-resource "azurerm_chaos_studio_target" "uks_vmsa_0" {
+resource "azurerm_chaos_studio_target" "tgt-uks_vmsa" {
+  count               = var.servercounta
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[count.index].id
   target_type         = "Microsoft-Agent"
 }
 
-resource "azurerm_chaos_studio_target" "uks_vmsa_1" {
-  location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[1].id
-  target_type         = "Microsoft-Agent"
-}
+# resource "azurerm_chaos_studio_target" "tgt-uks_vmsa_1" {
+#   location            = azurerm_resource_group.uks.location
+#   target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[1].id
+#   target_type         = "Microsoft-Agent"
+# }
 
-resource "azurerm_chaos_studio_target" "uks_vmsa_2" {
-  location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[2].id
-  target_type         = "Microsoft-Agent"
-}
+# resource "azurerm_chaos_studio_target" "tgt-uks_vmsa_2" {
+#   location            = azurerm_resource_group.uks.location
+#   target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[2].id
+#   target_type         = "Microsoft-Agent"
+# }
 
 /********************************************************************************
                  ADD SERVICE-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-resource "azurerm_chaos_studio_target" "key_vault_target" {
+resource "azurerm_chaos_studio_target" "tgt-key_vault_target" {
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_key_vault.example.id
+  target_resource_id  = azurerm_key_vault.kv1.id
   target_type         = "Microsoft-Service"
 }
 
-resource "azurerm_chaos_studio_target" "app_service_target" {
+resource "azurerm_chaos_studio_target" "tgt-app_service_target" {
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_app_service.app.id
+  target_resource_id  = azurerm_service_plan.uks-asp.id
   target_type         = "Microsoft-Service"
 }
 
 /********************************************************************************
-                     ADD CHAOS STUDIO EXPERIMENTS
+                     ADD CHAOS STUDIO CAPABILITIES
 ********************************************************************************/
+
+resource "azurerm_chaos_studio_capability" "cap_net_disconnect" {
+  count                  = var.servercounta
+  capability_type        = "NetworkDisconnect-1.1"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-uks_vmsa[count.index].id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_cpupressure" {
+  count                  = var.servercounta
+  capability_type        = "CPUPressure-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-uks_vmsa[count.index].id
+}
+
+
+# resource "azurerm_chaos_studio_capability" "cap_net_disconnect_0" {
+#   capability_type        = "NetworkDisconnect-1.1"
+#   chaos_studio_target_id = azurerm_chaos_studio_target.uks_vmsa_0.id
+# }
+
+/********************************************************************************
+                     ADD CHAOS STUDIO EXPERIMENTS SCENARIOS
+********************************************************************************/
+
+/********************************************************************************
+Notes:
+This entire section will be used to add in Real World scenarions based off PIR's
+from Microsoft.
+
+********************************************************************************/
+
 
 /********************************************************************************
 Notes:
@@ -1489,113 +1532,207 @@ NTS: I need to add in CosmosDB, Event Hub and Service Bus to match the PIR
 against the solution.
 ********************************************************************************/
 
-resource "azurerm_chaos_experiment" "vm_disruption_sept_2023" {
-  name                = "vm-disruption-sept-2023"
-  resource_group_name = azurerm_resource_group.uks.name
-  location            = azurerm_resource_group.uks.location
+# resource "azurerm_chaos_studio_experiment" "vm_disruption_sept_2023" {
+#   name                = "vm-disruption-sept-2023"
+#   resource_group_name = azurerm_resource_group.uks.name
+#   location            = azurerm_resource_group.uks.location
 
-  steps {
-    name = "NetworkDisruptionStep"
+#   steps {
+#     name = "NetworkDisruptionStep"
 
-    branches {
-      name = "Branch1"
+#     branches {
+#       name = "Branch1"
 
-      actions {
-        name          = "NetworkDisconnect"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#       actions {
+#         name          = "NetworkDisconnect"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
 
-        action_type   = "Microsoft.Network/PacketLoss/1.0"
-        parameters = {
-          duration = "PT5M"  # Simulate 5 minutes of network packet loss
-        }
-      }
-    }
-  }
+#         action_type   = "Microsoft.Network/PacketLoss/1.0"
+#         parameters = {
+#           duration = "PT5M"  # Simulate 5 minutes of network packet loss
+#         }
+#       }
+#     }
+#   }
 
-  steps {
-    name = "CPULoadAndDiskStressStep"
-    start_after = ["NetworkDisruptionStep"]
+#   steps {
+#     name = "CPULoadAndDiskStressStep"
+#     start_after = ["NetworkDisruptionStep"]
 
-    branches {
-      name = "Branch2"
+#     branches {
+#       name = "Branch2"
 
-      actions {
-        name          = "HighCPUUsage"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+#       actions {
+#         name          = "HighCPUUsage"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
 
-        action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
-        parameters = {
-          duration      = "PT10M"   # High CPU stress for 10 minutes
-          cpuPercentage = "90"      # Simulate 90% CPU usage
-        }
-      }
+#         action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
+#         parameters = {
+#           duration      = "PT10M"   # High CPU stress for 10 minutes
+#           cpuPercentage = "90"      # Simulate 90% CPU usage
+#         }
+#       }
 
-      actions {
-        name          = "HighDiskIO"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+#       actions {
+#         name          = "HighDiskIO"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
 
-        action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
-        parameters = {
-          duration = "PT10M"   # High disk IO for 10 minutes
-        }
-      }
-    }
-  }
+#         action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
+#         parameters = {
+#           duration = "PT10M"   # High disk IO for 10 minutes
+#         }
+#       }
+#     }
+#   }
 
-  steps {
-    name = "ShutdownVM"
-    start_after = ["CPULoadAndDiskStressStep"]
+#   steps {
+#     name = "ShutdownVM"
+#     start_after = ["CPULoadAndDiskStressStep"]
 
-    branches {
-      name = "Branch3"
+#     branches {
+#       name = "Branch3"
 
-      actions {
-        name          = "CrashVM"
-        type          = "Immediate"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+#       actions {
+#         name          = "CrashVM"
+#         type          = "Immediate"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
 
-        action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-      }
-    }
-  }
+#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
+#       }
+#     }
+#   }
 
-  identity {
-    type = "SystemAssigned"
-  }
-}
-
-resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics" {
-  name               = "chaos-diagnostics"
-  target_resource_id = azurerm_chaos_experiment.vm_disruption_sept_2023.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-
-  enabled_log {
-    category = "ChaosEvents"
-    retention_policy {
-      enabled = true
-      days    = 30
-    }
-  }
-
-  metric {
-    category = "AllMetrics"
-    retention_policy {
-      enabled = true
-      days    = 30
-    }
-  }
+#   identity {
+#     type = "SystemAssigned"
+#   }
+# }
 
 
-  #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
 
-}
+
+
+# resource "azurerm_chaos_studio_experiment" "azure_outage_july_2024" {
+#   name                = "azure-outage-july-2024"
+#   resource_group_name = azurerm_resource_group.uks.name
+#   location            = azurerm_resource_group.uks.location
+
+#   step {
+#     name = "NetworkPartitionStep"
+
+#     action {
+#       name          = "NetworkPartition"
+#       type          = "Continuous"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+
+#       action_type   = "Microsoft.Network/PacketLoss/1.0"
+#       parameters = {
+#         duration = "PT5M"  # Simulate 5 minutes of network packet loss
+#       }
+#     }
+
+#     action {
+#       name          = "NetworkPartitionRegion2"
+#       type          = "Continuous"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+
+#       action_type   = "Microsoft.Network/PacketLoss/1.0"
+#       parameters = {
+#         duration = "PT5M"  # Simulate network disruption across different regions/zones
+#       }
+#     }
+#   }
+
+#   step {
+#     name = "ServiceDegradationStep"
+
+#     action {
+#       name          = "HighCPUUsage"
+#       type          = "Continuous"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+
+#       action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
+#       parameters = {
+#         duration      = "PT10M"   # High CPU stress for 10 minutes
+#         cpuPercentage = "85"      # Simulate 85% CPU usage
+#       }
+#     }
+
+#     action {
+#       name          = "HighDiskIO"
+#       type          = "Continuous"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+
+#       action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
+#       parameters = {
+#         duration = "PT10M"   # High disk IO for 10 minutes
+#       }
+#     }
+#   }
+
+#   step {
+#     name = "ZoneFailureStep"
+
+#     action {
+#       name          = "Zone1Failure"
+#       type          = "Immediate"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+
+#       action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
+#     }
+
+#     action {
+#       name          = "Zone3Failure"
+#       type          = "Immediate"
+#       selector      = "targets"
+#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[2].id
+
+#       action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
+#     }
+#   }
+
+#   identity {
+#     type = "SystemAssigned"
+#   }
+# }
+
+
+# resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics_exp_1" {
+#   name               = "chaos-diagnostics-exp-1"
+#   target_resource_id = azurerm_chaos_experiment.vm_disruption_sept_2023.id
+#   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+
+#   enabled_log {
+#     category = "ChaosEvents"
+#     retention_policy {
+#       enabled = true
+#       days    = 30
+#     }
+#   }
+
+#   metric {
+#     category = "AllMetrics"
+#     retention_policy {
+#       enabled = true
+#       days    = 30
+#     }
+#   }
+
+
+#   #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
+
+# }
 
 /********************************************************************************
 Notes:
@@ -1609,137 +1746,154 @@ Azure Storage, SQL Database, Cosmos DB, Teams, and other services.
 NTS: I need to add in CosmosDB, to help match the PIR against the solution.
 ********************************************************************************/
 
-resource "azurerm_chaos_experiment" "azure_outage_july_2024" {
-  name                = "azure-outage-july-2024"
-  resource_group_name = azurerm_resource_group.uks.name
-  location            = azurerm_resource_group.uks.location
+# resource "azurerm_chaos_studio_experiment" "azure_outage_july_2024" {
+#   name                = "azure-outage-july-2024"
+#   resource_group_name = azurerm_resource_group.uks.name
+#   location            = azurerm_resource_group.uks.location
 
-  steps {
-    name = "NetworkPartitionStep"
+#   steps {
+#     name = "NetworkPartitionStep"
 
-    branches {
-      name = "Branch1"
+#     branches {
+#       name = "Branch1"
 
-      actions {
-        name          = "NetworkPartition"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#       actions {
+#         name          = "NetworkPartition"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
 
-        action_type   = "Microsoft.Network/PacketLoss/1.0"
-        parameters = {
-          duration = "PT5M"  # Simulate 5 minutes of network packet loss
-        }
-      }
+#         action_type   = "Microsoft.Network/PacketLoss/1.0"
+#         parameters = {
+#           duration = "PT5M"  # Simulate 5 minutes of network packet loss
+#         }
+#       }
 
-      actions {
-        name          = "NetworkPartitionRegion2"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+#       actions {
+#         name          = "NetworkPartitionRegion2"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
 
-        action_type   = "Microsoft.Network/PacketLoss/1.0"
-        parameters = {
-          duration = "PT5M"  # Simulate network disruption across different regions/zones
-        }
-      }
-    }
-  }
+#         action_type   = "Microsoft.Network/PacketLoss/1.0"
+#         parameters = {
+#           duration = "PT5M"  # Simulate network disruption across different regions/zones
+#         }
+#       }
+#     }
+#   }
 
-  steps {
-    name = "ServiceDegradationStep"
-    start_after = ["NetworkPartitionStep"]
+#   steps {
+#     name = "ServiceDegradationStep"
+#     start_after = ["NetworkPartitionStep"]
 
-    branches {
-      name = "Branch2"
+#     branches {
+#       name = "Branch2"
 
-      actions {
-        name          = "HighCPUUsage"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#       actions {
+#         name          = "HighCPUUsage"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
 
-        action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
-        parameters = {
-          duration      = "PT10M"   # High CPU stress for 10 minutes
-          cpuPercentage = "85"      # Simulate 85% CPU usage
-        }
-      }
+#         action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
+#         parameters = {
+#           duration      = "PT10M"   # High CPU stress for 10 minutes
+#           cpuPercentage = "85"      # Simulate 85% CPU usage
+#         }
+#       }
 
-      actions {
-        name          = "HighDiskIO"
-        type          = "Continuous"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#       actions {
+#         name          = "HighDiskIO"
+#         type          = "Continuous"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
 
-        action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
-        parameters = {
-          duration = "PT10M"   # High disk IO for 10 minutes
-        }
-      }
-    }
-  }
+#         action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
+#         parameters = {
+#           duration = "PT10M"   # High disk IO for 10 minutes
+#         }
+#       }
+#     }
+#   }
 
-  steps {
-    name = "ZoneFailureStep"
-    start_after = ["ServiceDegradationStep"]
+#   steps {
+#     name = "ZoneFailureStep"
+#     start_after = ["ServiceDegradationStep"]
 
-    branches {
-      name = "Branch3"
+#     branches {
+#       name = "Branch3"
 
-      actions {
-        name          = "Zone1Failure"
-        type          = "Immediate"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+#       actions {
+#         name          = "Zone1Failure"
+#         type          = "Immediate"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
 
-        action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-        parameters = {
-          duration = "PT5M"  # Simulate Availability Zone 1 failure (shutdown VM)
-        }
-      }
+#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
+#         parameters = {
+#           duration = "PT5M"  # Simulate Availability Zone 1 failure (shutdown VM)
+#         }
+#       }
 
-      actions {
-        name          = "Zone3Failure"
-        type          = "Immediate"
-        target_type   = "Microsoft-Agent"
-        target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[2].id
+#       actions {
+#         name          = "Zone3Failure"
+#         type          = "Immediate"
+#         target_type   = "Microsoft-Agent"
+#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[2].id
 
-        action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-        parameters = {
-          duration = "PT5M"  # Simulate Availability Zone 3 failure (shutdown VM)
-        }
-      }
-    }
-  }
+#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
+#         parameters = {
+#           duration = "PT5M"  # Simulate Availability Zone 3 failure (shutdown VM)
+#         }
+#       }
+#     }
+#   }
 
-  identity {
-    type = "SystemAssigned"
-  }
-}
+#   identity {
+#     type = "SystemAssigned"
+#   }
+# }
 
-resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics" {
-  name               = "chaos-diagnostics"
-  target_resource_id = azurerm_chaos_experiment.azure_outage_july_2024.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+# resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics_exp_2" {
+#   name               = "chaos-diagnostics-exp-2"
+#   target_resource_id = azurerm_chaos_experiment.azure_outage_july_2024.id
+#   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 
-  enabled_log {
-    category = "ChaosEvents"
-    retention_policy {
-      enabled = true
-      days    = 30
-    }
-  }
+#   enabled_log {
+#     category = "ChaosEvents"
+#     retention_policy {
+#       enabled = true
+#       days    = 30
+#     }
+#   }
 
-  metric {
-    category = "AllMetrics"
-    retention_policy {
-      enabled = true
-      days    = 30
-    }
-  }
+#   metric {
+#     category = "AllMetrics"
+#     retention_policy {
+#       enabled = true
+#       days    = 30
+#     }
+#   }
 
 
-  #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
+#   #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
 
-}
+# }
+
+/********************************************************************************
+                     ADD CHAOS STUDIO EXPERIMENTS (UK South Outages)
+********************************************************************************/
+
+/********************************************************************************
+Notes:
+This section will be used to create smaller issues based within UK South and
+Global Resources designed to test failovers and outages. This will include things
+like AAD outages, App Service Plan and VM Resource failures, Zonal outages, etc.
+
+I will need to be able to gather resources dynamically, and create scenarios
+that will be randomised (ie random availability zone failures, VM failures, etc)
+so that no one scenario will be the same. This will be created within Azure and
+can be extracted via ARM template for future use if needed.
+
+********************************************************************************/
