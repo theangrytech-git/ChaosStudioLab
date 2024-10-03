@@ -1,7 +1,0 @@
-random_id.kvname: Refreshing state... [id=j4vakPM]
-random_id.dns-name: Refreshing state... [id=ob5qhQ]
-random_string.random: Refreshing state... [id=Nie]
-random_password.vmpassword: Refreshing state... [id=none]
-
-Planning failed. Terraform encountered an error while generating this plan.
-
