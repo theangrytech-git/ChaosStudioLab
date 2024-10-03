@@ -2,7 +2,7 @@
 <br>
 <b>PROJECT NAME:     ChaosStudioLab<br>
 <b>CREATED BY:      THEANGRYTECH-GIT<br>
-REPO:         [(https://github.com/theangrytech-git/ChaosStudioLab)]<br><br>
+REPO:         https://github.com/theangrytech-git/ChaosStudioLab<br><br>
 DESCRIPTION:</b>      This project will be used to deploy a small lab in UK South <br>
 (UK West is optional as a failover for UK South, but can not be used for <br>
 testing within Chaos Studio at this time), create 3 real-world PIR experiments, <br>
