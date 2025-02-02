@@ -1,0 +1,329 @@
+data.external.get_public_ip: Reading...
+null_resource.register_chaos_provider: Refreshing state... [id=7176902544709688204]
+random_password.vmpassword: Refreshing state... [id=none]
+random_id.dns-name: Refreshing state... [id=RZcZSA]
+random_id.kvname: Refreshing state... [id=-V6xypI]
+random_string.random: Refreshing state... [id=wz0]
+data.external.get_public_ip: Read complete after 1s [id=-]
+azuread_application.cs_app: Refreshing state... [id=/applications/80301cc1-ec58-4159-b80a-bf0f7f9510c1]
+azuread_service_principal.cs_sp: Refreshing state... [id=/servicePrincipals/579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b]
+azuread_service_principal_password.cs_sp_pw: Refreshing state... [id=579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/password/cc095a5a-c354-4929-a029-7c0f9c7bf563]
+data.azurerm_subscription.current: Reading...
+data.azurerm_client_config.current: Reading...
+azurerm_resource_group.uks: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01]
+data.azurerm_client_config.current: Read complete after 0s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9OWY0ZTU4NzUtZDIyNi00NjYwLWE1MDQtYTc3N2I0Y2M5YTlkO3N1YnNjcmlwdGlvbklkPWIwNTU2ODZmLWEyNmUtNDNmMy05NzFlLWYwM2E4OWE3OTc5Zjt0ZW5hbnRJZD0zOTgxYWMwYy1lOWNhLTRlNjEtOWFiMS1jZmU5MDgyOWQ4NTI=]
+data.azurerm_subscription.current: Read complete after 1s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f]
+azurerm_role_assignment.chaos_contributor_sp: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/9752a6dc-bd27-3c74-6cab-77fa18906878]
+azurerm_availability_set.uks-asb: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-b]
+azurerm_public_ip.uks-fwpip: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fw-uksouth-01]
+azurerm_availability_set.uks-asa: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/availabilitySets/as-uksouth-a]
+azurerm_app_configuration.uks-config: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.AppConfiguration/configurationStores/appcfg-uksouth-01]
+azurerm_service_plan.uks-asp: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/serverFarms/uksouth-asp-01]
+azurerm_user_assigned_identity.uai-uks: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.ManagedIdentity/userAssignedIdentities/UAI-uksouth]
+azurerm_virtual_network.uks-hub1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01]
+azurerm_storage_account.uks-vm1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Storage/storageAccounts/sauksouthvmdiagwz0]
+azurerm_storage_account.uks-sa1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Storage/storageAccounts/sauksouthwz001]
+azurerm_network_security_group.uks-nsg1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkSecurityGroups/nsg-snet-uksouth-vnet-hub-01]
+azurerm_public_ip.uks-fwmanpip: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/publicIPAddresses/pip-fwman-uksouth-01]
+azurerm_role_assignment.fa: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/d6d5ed0f-5f2f-cf0d-c993-9a0166916716]
+azurerm_traffic_manager_profile.tm1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/trafficManagerProfiles/tm-chaos-demo]
+azurerm_role_assignment.servicebus: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/52bd4172-5747-a6c2-4e1f-2ba39559ed70]
+azurerm_role_assignment.chaos_contributor: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/dd9980e5-27e0-547e-7884-490343a2282b]
+azurerm_role_assignment.akscluster: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/f3ead0d5-a807-7e8b-75bb-433010f0e9d2]
+azurerm_role_assignment.storage_blob_data_reader: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/6b89b6d0-e156-418a-bc49-3ce31d253c7b]
+azurerm_role_assignment.eventhub: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/0aee1e5e-a45e-c515-4cef-a4ebae8bdf65]
+azurerm_role_assignment.domainname: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/fe56ac4d-b564-2a93-b42f-f8505aa47092]
+azurerm_role_assignment.autoscale: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/72a8bdb7-9bec-504a-b191-a882fdf5da06]
+azurerm_role_assignment.cosmosdb: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/5239134e-2251-d514-1df4-91587af1e769]
+azurerm_role_assignment.vm_operator: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/24eb161a-090c-4be6-5626-db1c466956ce]
+azurerm_role_assignment.key_vault: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/80f97ceb-77c3-37fc-976d-d204aedb33a4]
+azurerm_role_assignment.loadtest: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/3133b119-050e-5311-5508-89c2670c5913]
+azurerm_role_assignment.nsg: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/b7afa7ab-9acf-8ad1-99a7-a3dc7cdd1b14]
+azurerm_role_assignment.redis: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Authorization/roleAssignments/e934696a-ed1c-c01d-f35f-8300db3457f5]
+azurerm_subnet.uks-hub1-subnetfw: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/AzureFirewallSubnet]
+azurerm_subnet.uks-hub1-subnetfwman: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/AzureFirewallManagementSubnet]
+azurerm_subnet.uks-hub1-subnetlb: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snetlb-uksouth-vnet-hub-01]
+azurerm_subnet.uks-hub1-subnet: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_traffic_manager_azure_endpoint.uks-tme1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/trafficManagerProfiles/tm-chaos-demo/AzureEndpoints/uksouth-endpoint]
+azurerm_role_assignment.appconf_dataowner: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.AppConfiguration/configurationStores/appcfg-uksouth-01/providers/Microsoft.Authorization/roleAssignments/222672ff-4bd4-17e7-5471-e850d1741806]
+azurerm_lb.uks-lb: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth]
+azurerm_firewall.uks-fw1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01]
+azurerm_lb_probe.uks-probe: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/probes/http-probe]
+azurerm_lb_backend_address_pool.uks-pool: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_firewall_network_rule_collection.uks-outbound: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01/networkRuleCollections/uksouth-outbound]
+azurerm_route_table.uks-rt1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/routeTables/rtbl-uksouth-01]
+azurerm_firewall_nat_rule_collection.uks-nat: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/azureFirewalls/fw-uksouth-01/natRuleCollections/uksouth-nat1]
+azurerm_subnet_network_security_group_association.uks-hub: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_network_interface.uks-bnics[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-b-0]
+azurerm_network_interface.uks-anics[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-a-0]
+azurerm_lb_rule.uks-rule: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/loadBalancingRules/LBRule]
+azurerm_app_configuration_key.ck1: Refreshing state... [id=https://appcfg-uksouth-01.azconfig.io/kv/key1?label=appsecret1]
+azurerm_app_configuration_key.ck2: Refreshing state... [id=https://appcfg-uksouth-01.azconfig.io/kv/key2?label=appsecret2]
+azurerm_subnet_route_table_association.uks: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/virtualNetworks/vnet-uksouth-hub-01/subnets/snethost-uksouth-vnet-hub-01]
+azurerm_network_interface_backend_address_pool_association.uks-b[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-b-0/ipConfigurations/uksouth-nic-b-0-ipconfig|/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_network_interface_backend_address_pool_association.uks-a[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/networkInterfaces/nic-uksouth-a-0/ipConfigurations/uksouth-nic-a-0-ipconfig|/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Network/loadBalancers/lb-int-uksouth/backendAddressPools/BackEndAddressPool]
+azurerm_linux_function_app.uks-fa: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/sites/fa-uksouth-wz0]
+azurerm_chaos_studio_target.tgt-app_service_target: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/sites/fa-uksouth-wz0/providers/Microsoft.Chaos/targets/Microsoft-AppService]
+data.azurerm_linux_function_app.uks-fa: Reading...
+data.azurerm_linux_function_app.uks-fa: Still reading... [10s elapsed]
+data.azurerm_linux_function_app.uks-fa: Still reading... [20s elapsed]
+data.azurerm_linux_function_app.uks-fa: Read complete after 24s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Web/sites/fa-uksouth-wz0]
+azurerm_key_vault.kv1: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92]
+azurerm_chaos_studio_target.tgt-key_vault_target: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92/providers/Microsoft.Chaos/targets/Microsoft-KeyVault]
+azurerm_key_vault_secret.vmpassword2: Refreshing state... [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword2/5e93b4eac983478aabe58cee80408387]
+azurerm_key_vault_secret.vmpassword1: Refreshing state... [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword1/07d7039948804421ac3a437b10d76753]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1]
+azurerm_chaos_studio_target.tgt_uks_vmss[1]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet]
+azurerm_chaos_studio_target.tgt_uks_vmss[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet]
+azurerm_monitor_autoscale_setting.vmss_autoscale[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Insights/autoScaleSettings/uks-0-autoscale]
+azurerm_monitor_autoscale_setting.vmss_autoscale[1]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Insights/autoScaleSettings/uks-1-autoscale]
+azurerm_chaos_studio_capability.cap_vmss_shutdown[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet/capabilities/Shutdown-1.0]
+azurerm_chaos_studio_capability.cap_vmss_shutdown[1]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet/capabilities/Shutdown-1.0]
+azurerm_chaos_studio_target.tgt-uks_vmsa[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachine]
+azurerm_key_vault_access_policy.kv1_vmsa_access: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92/objectId/858d7f1f-348b-49e2-a009-56aa324db556]
+azurerm_chaos_studio_capability.cap_vm_shutdown[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachine/capabilities/Shutdown-1.0]
+azurerm_chaos_studio_capability.cap_vm_redeploy[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachine/capabilities/Redeploy-1.0]
+azurerm_chaos_studio_target.tgt-uks_vmsb[0]: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachine]
+azurerm_key_vault_access_policy.kv1_vmsb_access: Refreshing state... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92/objectId/76c7ad7f-87a9-4663-842e-54c32d57f1e0]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+-/+ destroy and then create replacement
+
+Terraform will perform the following actions:
+
+  # azuread_service_principal_password.cs_sp_pw must be replaced
+-/+ resource "azuread_service_principal_password" "cs_sp_pw" {
+      + display_name         = (known after apply)
+      ~ end_date             = "2025-02-02T05:53:39Z" # forces replacement -> (known after apply) # forces replacement
+      ~ id                   = "579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/password/cc095a5a-c354-4929-a029-7c0f9c7bf563" -> (known after apply)
+      ~ key_id               = "cc095a5a-c354-4929-a029-7c0f9c7bf563" -> (known after apply)
+      ~ start_date           = "2025-01-26T17:53:35.9612007Z" -> (known after apply)
+      ~ value                = (sensitive value)
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_chaos_studio_capability.cap_vmss_redeploy[0] will be created
+  + resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
+      + capability_type        = "Shutdown-2.0"
+      + chaos_studio_target_id = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet"
+      + id                     = (known after apply)
+      + urn                    = (known after apply)
+    }
+
+  # azurerm_chaos_studio_capability.cap_vmss_redeploy[1] will be created
+  + resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
+      + capability_type        = "Shutdown-2.0"
+      + chaos_studio_target_id = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet"
+      + id                     = (known after apply)
+      + urn                    = (known after apply)
+    }
+
+  # azurerm_key_vault_access_policy.kv1_vmsa_access will be created
+  + resource "azurerm_key_vault_access_policy" "kv1_vmsa_access" {
+      + id                 = (known after apply)
+      + key_vault_id       = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92"
+      + object_id          = "858d7f1f-348b-49e2-a009-56aa324db556"
+      + secret_permissions = [
+          + "Get",
+          + "List",
+        ]
+      + tenant_id          = "3981ac0c-e9ca-4e61-9ab1-cfe90829d852"
+    }
+
+  # azurerm_key_vault_access_policy.kv1_vmsb_access will be created
+  + resource "azurerm_key_vault_access_policy" "kv1_vmsb_access" {
+      + id                 = (known after apply)
+      + key_vault_id       = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92"
+      + object_id          = "76c7ad7f-87a9-4663-842e-54c32d57f1e0"
+      + secret_permissions = [
+          + "Get",
+          + "List",
+        ]
+      + tenant_id          = "3981ac0c-e9ca-4e61-9ab1-cfe90829d852"
+    }
+
+  # azurerm_key_vault_secret.vmpassword1 will be updated in-place
+  ~ resource "azurerm_key_vault_secret" "vmpassword1" {
+      ~ expiration_date         = "2025-02-02T05:53:39Z" -> (known after apply)
+        id                      = "https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword1/07d7039948804421ac3a437b10d76753"
+        name                    = "vmpassword1"
+        tags                    = {}
+        # (7 unchanged attributes hidden)
+    }
+
+  # azurerm_key_vault_secret.vmpassword2 will be updated in-place
+  ~ resource "azurerm_key_vault_secret" "vmpassword2" {
+      ~ expiration_date         = "2025-02-02T05:53:39Z" -> (known after apply)
+        id                      = "https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword2/5e93b4eac983478aabe58cee80408387"
+        name                    = "vmpassword2"
+        tags                    = {}
+        # (7 unchanged attributes hidden)
+    }
+
+  # azurerm_windows_virtual_machine.uks-vmsa[0] will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
+        id                                                     = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0"
+        name                                                   = "vm-uks-a-0"
+        tags                                                   = {
+            "Environment" = "ChaosStudioDemo"
+            "Health"      = "Active"
+            "Owner"       = "dacat"
+        }
+      ~ vm_agent_platform_updates_enabled                      = true -> false
+        # (26 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
+    }
+
+  # azurerm_windows_virtual_machine.uks-vmsb[0] will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
+        id                                                     = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0"
+        name                                                   = "vm-uks-b-0"
+        tags                                                   = {
+            "Environment" = "ChaosStudioDemo"
+            "Health"      = "Active"
+            "Owner"       = "dacat"
+        }
+      ~ vm_agent_platform_updates_enabled                      = true -> false
+        # (26 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
+    }
+
+  # azurerm_windows_virtual_machine_scale_set.uks-vmssa[0] will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
+        id                                                = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0"
+      ~ instances                                         = 4 -> 6
+        name                                              = "uks-0"
+        tags                                              = {
+            "Environment" = "ChaosStudioDemo"
+            "Health"      = "Active"
+            "Owner"       = "dacat"
+        }
+        # (23 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # azurerm_windows_virtual_machine_scale_set.uks-vmssa[1] will be updated in-place
+  ~ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
+        id                                                = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1"
+      ~ instances                                         = 5 -> 6
+        name                                              = "uks-1"
+        tags                                              = {
+            "Environment" = "ChaosStudioDemo"
+            "Health"      = "Active"
+            "Owner"       = "dacat"
+        }
+        # (23 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # null_resource.register_chaos_provider must be replaced
+-/+ resource "null_resource" "register_chaos_provider" {
+      ~ id       = "7176902544709688204" -> (known after apply)
+      ~ triggers = { # forces replacement
+          ~ "always_run" = "2025-01-26T17:53:39Z" -> (known after apply)
+        }
+    }
+
+Plan: 6 to add, 6 to change, 2 to destroy.
+
+Changes to Outputs:
+  ~ client_secret                     = (sensitive value)
+null_resource.register_chaos_provider: Destroying... [id=7176902544709688204]
+null_resource.register_chaos_provider: Destruction complete after 0s
+null_resource.register_chaos_provider: Creating...
+null_resource.register_chaos_provider: Provisioning with 'local-exec'...
+null_resource.register_chaos_provider (local-exec): Executing: ["cmd" "/C" "az provider register --namespace Microsoft.Chaos"]
+null_resource.register_chaos_provider: Creation complete after 2s [id=8203830137226910534]
+azuread_service_principal_password.cs_sp_pw: Destroying... [id=579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/password/cc095a5a-c354-4929-a029-7c0f9c7bf563]
+azurerm_chaos_studio_capability.cap_vmss_redeploy[0]: Creating...
+azurerm_chaos_studio_capability.cap_vmss_redeploy[1]: Creating...
+azurerm_key_vault_secret.vmpassword1: Modifying... [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword1/07d7039948804421ac3a437b10d76753]
+azurerm_key_vault_secret.vmpassword2: Modifying... [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword2/5e93b4eac983478aabe58cee80408387]
+azurerm_key_vault_secret.vmpassword2: Modifications complete after 2s [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword2/5e93b4eac983478aabe58cee80408387]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0]
+azurerm_key_vault_secret.vmpassword1: Modifications complete after 2s [id=https://keyvaultf95eb1ca92.vault.azure.net/secrets/vmpassword1/07d7039948804421ac3a437b10d76753]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1]
+azuread_service_principal_password.cs_sp_pw: Still destroying... [id=579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/pa...d/cc095a5a-c354-4929-a029-7c0f9c7bf563, 10s elapsed]
+azurerm_chaos_studio_capability.cap_vmss_redeploy[1]: Still creating... [10s elapsed]
+azurerm_chaos_studio_capability.cap_vmss_redeploy[0]: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-...oft.Compute/virtualMachines/vm-uks-b-0, 10s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-...oft.Compute/virtualMachines/vm-uks-a-0, 10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 10s elapsed]
+azurerm_chaos_studio_capability.cap_vmss_redeploy[1]: Creation complete after 16s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet/capabilities/Shutdown-2.0]
+azuread_service_principal_password.cs_sp_pw: Still destroying... [id=579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/pa...d/cc095a5a-c354-4929-a029-7c0f9c7bf563, 20s elapsed]
+azuread_service_principal_password.cs_sp_pw: Destruction complete after 22s
+azuread_service_principal_password.cs_sp_pw: Creating...
+azurerm_chaos_studio_capability.cap_vmss_redeploy[0]: Creation complete after 18s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0/providers/Microsoft.Chaos/targets/Microsoft-VirtualMachineScaleSet/capabilities/Shutdown-2.0]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-...oft.Compute/virtualMachines/vm-uks-b-0, 20s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 20s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 20s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-...oft.Compute/virtualMachines/vm-uks-a-0, 20s elapsed]
+azuread_service_principal_password.cs_sp_pw: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine.uks-vmsb[0]: Modifications complete after 29s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-b-0]
+azurerm_key_vault_access_policy.kv1_vmsb_access: Creating...
+azurerm_windows_virtual_machine.uks-vmsa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-...oft.Compute/virtualMachines/vm-uks-a-0, 30s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 30s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 30s elapsed]
+azurerm_windows_virtual_machine.uks-vmsa[0]: Modifications complete after 30s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachines/vm-uks-a-0]
+azurerm_key_vault_access_policy.kv1_vmsa_access: Creating...
+azuread_service_principal_password.cs_sp_pw: Still creating... [20s elapsed]
+azuread_service_principal_password.cs_sp_pw: Creation complete after 21s [id=579fe9cf-03c5-4e99-9209-a3a5bbc1ab2b/password/bc81bfca-e921-454e-a7db-c39a182d2152]
+azurerm_key_vault_access_policy.kv1_vmsb_access: Still creating... [10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 40s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 40s elapsed]
+azurerm_key_vault_access_policy.kv1_vmsa_access: Still creating... [10s elapsed]
+azurerm_key_vault_access_policy.kv1_vmsb_access: Creation complete after 11s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92/objectId/76c7ad7f-87a9-4663-842e-54c32d57f1e0]
+azurerm_key_vault_access_policy.kv1_vmsa_access: Creation complete after 19s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.KeyVault/vaults/keyvaultf95eb1ca92/objectId/858d7f1f-348b-49e2-a009-56aa324db556]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 50s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 50s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m0s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 1m0s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 1m10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 1m20s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m20s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m30s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 1m30s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m40s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-0, 1m40s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[0]: Modifications complete after 1m41s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-0]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 1m50s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 2m0s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Still modifying... [id=/subscriptions/b055686f-a26e-43f3-971e-....Compute/virtualMachineScaleSets/uks-1, 2m10s elapsed]
+azurerm_windows_virtual_machine_scale_set.uks-vmssa[1]: Modifications complete after 2m12s [id=/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01/providers/Microsoft.Compute/virtualMachineScaleSets/uks-1]
+
+Apply complete! Resources: 6 added, 6 changed, 2 destroyed.
+
+Outputs:
+
+_1_Access-URL-via-TrafficManager = "Use this URL to access via Traffic Manager: http://chaos-demo-45971948.trafficmanager.net "
+_2_Access-URL-via-uks-Firewall = "Use this URL to access directly to the uksouth Firewall: http://pip-uks-45971948.uksouth.cloudapp.azure.com "
+client_id = "5910c514-750a-4908-b00c-e0599f687d85"
+client_secret = <sensitive>
+current_subscription_display_name = {
+  "display_name" = "Visual Studio Professional Subscription"
+  "id" = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f"
+  "location_placement_id" = "Public_2014-09-01"
+  "quota_id" = "MSDN_2014-09-01"
+  "spending_limit" = "On"
+  "state" = "Enabled"
+  "subscription_id" = "b055686f-a26e-43f3-971e-f03a89a7979f"
+  "tags" = tomap({})
+  "tenant_id" = "3981ac0c-e9ca-4e61-9ab1-cfe90829d852"
+  "timeouts" = null /* object */
+}
+id = "/subscriptions/b055686f-a26e-43f3-971e-f03a89a7979f/resourceGroups/rg-uksouth-chaos-demo-01"
+public_ip = "88.97.160.11"

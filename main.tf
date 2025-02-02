@@ -3,11 +3,12 @@
 PROJECT NAME:       AZURE-CHAOS-STUDIO
 CREATED BY:         THEANGRYTECH-GIT
 REPO:
-DESCRIPTION:        This project sets up an Azure environment in UK South and
-*TO BE CONFIRMED* which will deploy in each region: VM's in an Availability Set,
-VM Scale Sets, NSG's, Key Vaults, Traffic Manager, Firewall, Route Table,
-Storage Accounts, Load Balancers, Application Insights, Managed Identities,
-Function Apps, App Service Plans, and some Chaos Studio experiments.
+DESCRIPTION:        This project sets up an Azure environment in UK South which 
+will deploy in each region: VM's in an Availability Set, VM Scale Sets, NSG's, 
+Key Vaults, Traffic Manager, Firewall, Route Table, Storage Accounts, Load 
+Balancers, Application Insights, Managed Identities, Function Apps, App Service 
+Plans, Service Buses, Event Hubs, Log Analytics,  and some Chaos Studio 
+experiments.
 
 *******************************************************************************/
 
@@ -15,9 +16,8 @@ Function Apps, App Service Plans, and some Chaos Studio experiments.
 Notes:
 Chaos Studio is only available in select regions:
 https://azure.microsoft.com/en-gb/explore/global-infrastructure/products-by-region/?products=chaos-studio#products-by-region_tab5
-My environment is only available in UK South/West - to use this environment,
-please replace any references to UK West (UKW) to a region that you want to
-use that's supported by Chaos Studio, and then un-comment those sections.
+My environment is only available in UK South - this will be expanded in future
+to cover regions if needed for large-scale experiments.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -37,7 +37,7 @@ value = data.azurerm_subscription.current
 }
 
 data "external" "get_public_ip" {
-  program = ["python3", "${path.module}/get_public_ip.py"]
+  program = ["python", "${path.module}/get_public_ip.py"]
 }
 
 output "public_ip" {
@@ -55,6 +55,8 @@ locals {
 
 resource "random_string" "random" {
   length           = 3
+  lower = true
+  upper = false
   numeric = true
   special          = false
 }
@@ -77,7 +79,7 @@ resource "random_id" "dns-name" {
                          CREATE RESOURCE GROUPS
 *******************************************************************************/
 resource "azurerm_resource_group" "uks" {
-  name     = "rg-${var.uks}-${var.labname}-01"
+  name     = "rg-${var.labname}-${var.uks}-01"
   location = var.uks
   tags = {
     Owner = var.owner_tag
@@ -89,20 +91,11 @@ output "id" {
   value = azurerm_resource_group.uks.id
 }
 
-# resource "azurerm_resource_group" "ukw" {
-#   name     = "rg-${var.ukw}-${var.labname}-01"
-#   location = var.ukw
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-
 /*******************************************************************************
                          CREATE VIRTUAL NETWORKS
 *******************************************************************************/
 resource "azurerm_virtual_network" "uks-hub1" {
-  name                = "vnet-${var.uks}-hub-01"
+  name                = "vnet-${var.labname}-${var.uks}-hub01"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
   address_space       = [cidrsubnet("${var.ukscidr}", 2, 0)]
@@ -111,29 +104,19 @@ resource "azurerm_virtual_network" "uks-hub1" {
     Environment = var.environment_tag
   }
 }
-# resource "azurerm_virtual_network" "ukw-hub1" {
-#   name                = "vnet-${var.ukw}-hub-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   address_space       = [cidrsubnet("${var.ukwcidr}", 2, 0)]
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
 
 /*******************************************************************************
                          CREATE SUBNETS
 *******************************************************************************/
 resource "azurerm_subnet" "uks-hub1-subnet" {
-  name                 = "snethost-${var.uks}-vnet-hub-01"
+  name                 = "snethost-${var.labname}-${var.uks}-01"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
   address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 0)]
   service_endpoints = ["Microsoft.KeyVault"]
 }
 resource "azurerm_subnet" "uks-hub1-subnetlb" {
-  name                 = "snetlb-${var.uks}-vnet-hub-01"
+  name                 = "snetlb-${var.labname}-${var.uks}-01"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
   address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 1)]
@@ -151,53 +134,16 @@ resource "azurerm_subnet" "uks-hub1-subnetfwman" {
   address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 3)]
 }
 
-# resource "azurerm_subnet" "ukw-hub1-subnet" {
-#   name                 = "snet-${var.ukw}-vnet-hub-01"
-#   resource_group_name  = azurerm_resource_group.ukw.name
-#   virtual_network_name = azurerm_virtual_network.ukw-hub1.name
-#   address_prefixes     = [cidrsubnet("${var.ukwcidr}", 5, 0)]
-#   service_endpoints = ["Microsoft.KeyVault"]
-# }
-# resource "azurerm_subnet" "ukw-hub1-subnetlb" {
-#   name                 = "snetlb-${var.ukw}-vnet-hub-01"
-#   resource_group_name  = azurerm_resource_group.ukw.name
-#   virtual_network_name = azurerm_virtual_network.ukw-hub1.name
-#   address_prefixes     = [cidrsubnet("${var.ukwcidr}", 5, 1)]
-# }
-# resource "azurerm_subnet" "ukw-hub1-subnetfw" {
-#   name                 = "AzureFirewallSubnet"
-#   resource_group_name  = azurerm_resource_group.ukw.name
-#   virtual_network_name = azurerm_virtual_network.ukw-hub1.name
-#   address_prefixes     = [cidrsubnet("${var.ukwcidr}", 5, 2)]
-# }
-# resource "azurerm_subnet" "ukw-hub1-subnetfwman" {
-#   name                 = "AzureFirewallManagementSubnet"
-#   resource_group_name  = azurerm_resource_group.ukw.name
-#   virtual_network_name = azurerm_virtual_network.ukw-hub1.name
-#   address_prefixes     = [cidrsubnet("${var.ukwcidr}", 5, 3)]
-# }
-
 /*******************************************************************************
                          CREATE NETWORK PEERINGS
 *******************************************************************************/
-# resource "azurerm_virtual_network_peering" "hub1-to-hub2" {
-#   name                      = "${var.uks}-hub-to-${var.ukw}-hub"
-#   resource_group_name       = azurerm_resource_group.uks.name
-#   virtual_network_name      = azurerm_virtual_network.uks-hub1.name
-#   remote_virtual_network_id = azurerm_virtual_network.ukw-hub1.id
-# }
-# resource "azurerm_virtual_network_peering" "hub2-to-hub1" {
-#   name                      = "${var.ukw}-hub-to-${var.uks}-hub"
-#   resource_group_name       = azurerm_resource_group.ukw.name
-#   virtual_network_name      = azurerm_virtual_network.ukw-hub1.name
-#   remote_virtual_network_id = azurerm_virtual_network.uks-hub1.id
-# }
+# To be added in another time - need to look at doing this in another region.
 
 /*******************************************************************************
                          CREATE NETWORK SECURITY GROUPS
 *******************************************************************************/
 resource "azurerm_network_security_group" "uks-nsg1" {
-  name                = "nsg-snet-${var.uks}-vnet-hub-01"
+  name                = "nsg-${var.labname}-${var.uks}-01"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
 
@@ -211,27 +157,11 @@ resource "azurerm_subnet_network_security_group_association" "uks-hub" {
   network_security_group_id = azurerm_network_security_group.uks-nsg1.id
 }
 
-# resource "azurerm_network_security_group" "ukw-nsg1" {
-#   name                = "nsg-snet-${var.ukw}-vnet-hub-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-# resource "azurerm_subnet_network_security_group_association" "ukw-hub" {
-#   subnet_id                 = azurerm_subnet.ukw-hub1-subnet.id
-#   network_security_group_id = azurerm_network_security_group.ukw-nsg1.id
-# }
-
-
 /*******************************************************************************
                          CREATE ROUTE TABLES
 *******************************************************************************/
 resource "azurerm_route_table" "uks-rt1" {
-  name                = "rtbl-${var.uks}-01"
+  name                = "rtbl-${var.labname}-${var.uks}-01"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
 
@@ -247,23 +177,6 @@ resource "azurerm_subnet_route_table_association" "uks" {
   route_table_id = azurerm_route_table.uks-rt1.id
 }
 
-# resource "azurerm_route_table" "ukw-rt1" {
-#   name                = "rtbl-${var.ukw}-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-
-#   route {
-#     name                   = "route1"
-#     address_prefix         = "0.0.0.0/0"
-#     next_hop_type          = "VirtualAppliance"
-#     next_hop_in_ip_address = azurerm_firewall.ukw-fw1.ip_configuration[0].private_ip_address
-#   }
-# }
-# resource "azurerm_subnet_route_table_association" "ukw" {
-#   subnet_id      = azurerm_subnet.ukw-hub1-subnet.id
-#   route_table_id = azurerm_route_table.ukw-rt1.id
-# }
-
 /*******************************************************************************
                          CREATE KEY VAULT
 *******************************************************************************/
@@ -272,7 +185,7 @@ data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv1" {
   depends_on                  = [azurerm_resource_group.uks]
-  name                        = random_id.kvname.hex
+  name                        = "kv-${var.labname}-${var.uks}-${random_id.kvname.hex}"
   location                    = var.uks
   resource_group_name         = azurerm_resource_group.uks.name
   enabled_for_disk_encryption = true
@@ -365,33 +278,12 @@ resource "azurerm_key_vault_secret" "vmpassword2" {
   expiration_date = local.expiration_date
 }
 
-# resource "azurerm_key_vault_secret" "appsecret1" {
-#   name         = "appsecret1"
-#   value        = random_password.vmpassword.result
-#   key_vault_id = azurerm_key_vault.kv1.id
-#   content_type = "FA App Secret 1"
-#   expiration_date = local.expiration_date
-#   #depends_on   = [azurerm_key_vault.kv1]
-# }
-
-# resource "azurerm_key_vault_secret" "appsecret2" {
-#   name         = "appsecret2"
-#   value        = random_password.vmpassword.result
-#   key_vault_id = azurerm_key_vault.kv1.id
-#   content_type = "FA App Secret 2"
-#   expiration_date = local.expiration_date
-#   #depends_on   = [azurerm_key_vault.kv1]
-# }
-
 /*******************************************************************************
                          CREATE APP CONFIGS
 *******************************************************************************/
-/***
-NOTE - I've added this section in to break a circular dependancy with KV/VM/Secrets.
-I'm going to leave this in for now, as there's some plan
-***/
+
 resource "azurerm_app_configuration" "uks-config" {
-  name                = "appcfg-${var.uks}-01"
+  name                = "appcfg-${var.labname}-${var.uks}-01"
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
 
@@ -436,12 +328,12 @@ resource "azurerm_role_assignment" "appconf_dataowner" {
 *******************************************************************************/
 resource "azurerm_network_interface" "uks-anics" {
   count               = var.servercounta
-  name                = "nic-${var.uks}-a-${count.index}"
+  name                = "nic-${var.labname}-${var.uks}-a-${count.index}"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
 
   ip_configuration {
-    name                          = "${var.uks}-nic-a-${count.index}-ipconfig"
+    name                          = "nic-${var.labname}-${var.uks}-a-${count.index}-ipconfig"
     subnet_id                     = azurerm_subnet.uks-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
@@ -452,12 +344,12 @@ resource "azurerm_network_interface" "uks-anics" {
 }
 resource "azurerm_network_interface" "uks-bnics" {
   count               = var.servercountb
-  name                = "nic-${var.uks}-b-${count.index}"
+  name                = "nic-${var.labname}-${var.uks}-b-${count.index}"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
 
   ip_configuration {
-    name                          = "${var.uks}-nic-b-${count.index}-ipconfig"
+    name                          = "nic-${var.labname}-${var.uks}-b-${count.index}-ipconfig"
     subnet_id                     = azurerm_subnet.uks-hub1-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
@@ -467,44 +359,11 @@ resource "azurerm_network_interface" "uks-bnics" {
   }
 }
 
-# resource "azurerm_network_interface" "ukw-anics" {
-#   count               = var.servercounta
-#   name                = "nic-${var.ukw}-a-${count.index}"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-
-#   ip_configuration {
-#     name                          = "${var.ukw}-nic-a-${count.index}-ipconfig"
-#     subnet_id                     = azurerm_subnet.ukw-hub1-subnet.id
-#     private_ip_address_allocation = "Dynamic"
-#   }
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-# resource "azurerm_network_interface" "ukw-bnics" {
-#   count               = var.servercountb
-#   name                = "nic-${var.ukw}-b-${count.index}"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-
-#   ip_configuration {
-#     name                          = "${var.ukw}-nic-b-${count.index}-ipconfig"
-#     subnet_id                     = azurerm_subnet.ukw-hub1-subnet.id
-#     private_ip_address_allocation = "Dynamic"
-#   }
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-
 /*******************************************************************************
                          CREATE AVAILABILITY SETS
 *******************************************************************************/
 resource "azurerm_availability_set" "uks-asa" {
-  name                        = "as-${var.uks}-a"
+  name                        = "as-${var.labname}-${var.uks}-01"
   location                    = var.uks
   resource_group_name         = azurerm_resource_group.uks.name
   platform_fault_domain_count = 2
@@ -515,7 +374,7 @@ resource "azurerm_availability_set" "uks-asa" {
   }
 }
 resource "azurerm_availability_set" "uks-asb" {
-  name                        = "as-${var.uks}-b"
+  name                        = "as-${var.labname}-${var.uks}-02"
   location                    = var.uks
   resource_group_name         = azurerm_resource_group.uks.name
   platform_fault_domain_count = 2
@@ -526,44 +385,28 @@ resource "azurerm_availability_set" "uks-asb" {
   }
 }
 
-# resource "azurerm_availability_set" "ukw-asa" {
-#   name                        = "as-${var.ukw}-a"
-#   location                    = var.ukw
-#   resource_group_name         = azurerm_resource_group.ukw.name
-#   platform_fault_domain_count = 2
-
-#  tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-# resource "azurerm_availability_set" "ukw-asb" {
-#   name                        = "as-${var.ukw}-b"
-#   location                    = var.ukw
-#   resource_group_name         = azurerm_resource_group.ukw.name
-#   platform_fault_domain_count = 2
-
-#  tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
-
 /*******************************************************************************
                     CREATE VIRTUAL MACHINE SCALE SETS
 *******************************************************************************/
 
 resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   count               = var.vmsscounta
-  name                = "${var.ukscode}-${count.index}"
+  name                = "vmss-${var.ukscode}-${count.index}"
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
-  sku                 = "Standard_D2s_v4"
-  instances           = 5
+  sku                 = "Standard_B1ms"
+  instances           = 6
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
   upgrade_mode        = "Automatic"
   zones = ["1","2","3"]
+
+  rolling_upgrade_policy {
+    max_unhealthy_instance_percent          = 20   # Max percentage of instances that can be unhealthy during upgrade
+    max_batch_instance_percent             = 20   # Max percentage of instances to upgrade in each batch
+    max_unhealthy_upgraded_instance_percent = 20   # Max percentage of upgraded instances that can be unhealthy
+    pause_time_between_batches             = "PT10M"  # Wait 10 minutes between batches
+  } 
 
   os_disk {
     caching              = "ReadWrite"
@@ -602,6 +445,12 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   }
 }
 
+data "azurerm_virtual_machine_scale_set" "availability_zone_vmss" {
+  for_each            = toset(["1", "2"])
+  name = "az-vmss"
+  resource_group_name = azurerm_resource_group.uks.name
+}
+
 resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
   count               = length(azurerm_windows_virtual_machine_scale_set.uks-vmssa)
   name                = "${azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].name}-autoscale"
@@ -615,8 +464,8 @@ resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
 
     capacity {
       minimum = "1"  # Minimum number of instances
-      maximum = "5"  # Maximum number of instances
-      default = "1"  # Start with 1 instances
+      maximum = "10"  # Maximum number of instances
+      default = "6"  # Start with 6 instances
     }
 
     # Rule to scale out (add 1 VM) when CPU usage is above 50%
@@ -680,7 +529,7 @@ need to add in a custom ext script to install Hyper-V, IIS, and potentially crea
 
 resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   count               = var.servercounta
-  name                = "vm-${var.ukscode}-a-${count.index}"
+  name                = "vm-${var.labname}-${var.uks}-a-${count.index}"
   depends_on          = [azurerm_key_vault.kv1]
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
@@ -719,7 +568,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
 
 resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   count               = var.servercountb
-  name                = "vm-${var.ukscode}-b-${count.index}"
+  name                = "vm-${var.labname}-${var.uks}-b-${count.index}"
   depends_on          = [azurerm_key_vault.kv1]
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
@@ -756,74 +605,11 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   }
 }
 
-# resource "azurerm_windows_virtual_machine" "ukw-avms" {
-#   count               = var.servercounta
-#   name                = "vm-${var.ukwcode}-a-${count.index}"
-#   depends_on          = [azurerm_key_vault.kv1]
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   location            = var.ukw
-#   size                = "Standard_D2s_v4"
-#   admin_username      = "azureadmin"
-#   admin_password      = azurerm_key_vault_secret.vmpassword2.value
-#   availability_set_id = azurerm_availability_set.ukw-asa.id
-#   network_interface_ids = [
-#     azurerm_network_interface.ukw-anics[count.index].id,
-#   ]
-
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-
-#   os_disk {
-#     caching              = "ReadWrite"
-#     storage_account_type = "StandardSSD_LRS"
-#   }
-
-#   source_image_reference {
-#     publisher = "MicrosoftWindowsServer"
-#     offer     = "WindowsServer"
-#     sku       = "2022-Datacenter"
-#     version   = "latest"
-#   }
-#   boot_diagnostics {
-#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint
-#   }
-# }
-# resource "azurerm_windows_virtual_machine" "ukw-bvms" {
-#   count               = var.servercountb
-#   name                = "vm-${var.ukwcode}-b-${count.index}"
-#   depends_on          = [azurerm_key_vault.kv1]
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   location            = var.ukw
-#   size                = "Standard_D2s_v4"
-#   admin_username      = "azureadmin"
-#   admin_password      = azurerm_key_vault_secret.vmpassword2.value
-#   availability_set_id = azurerm_availability_set.ukw-asb.id
-#   network_interface_ids = [
-#     azurerm_network_interface.ukw-bnics[count.index].id,
-#   ]
-
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-
-#   os_disk {
-#     caching              = "ReadWrite"
-#     storage_account_type = "StandardSSD_LRS"
-#   }
-
-#   source_image_reference {
-#     publisher = "MicrosoftWindowsServer"
-#     offer     = "WindowsServer"
-#     sku       = "2022-Datacenter"
-#     version   = "latest"
-#   }
-#   boot_diagnostics {
-#     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint
-#   }
-# }
+data "azurerm_virtual_machine" "availability_zone_vms" {
+  for_each            = toset(["1", "2"])
+  name = "az-vm"
+  resource_group_name = azurerm_resource_group.uks.name
+}
 
 /*******************************************************************************
                          CREATE PUBLIC IP
@@ -853,28 +639,11 @@ resource "azurerm_public_ip" "uks-fwmanpip" {
   }
 }
 
-# resource "azurerm_public_ip" "ukw-fwpip" {
-#   name                = "pip-fw-${var.ukw}-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   allocation_method   = "Static"
-#   sku                 = "Standard"
-#   domain_name_label   = "pip-${var.ukwcode}-${random_id.dns-name.hex}"
-# }
-
-# resource "azurerm_public_ip" "ukw-fwmanpip" {
-#   name                = "pip-fwman-${var.ukw}-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   allocation_method   = "Static"
-#   sku                 = "Standard"
-# }
-
 /*******************************************************************************
                          CREATE FIREWALLS
 *******************************************************************************/
 resource "azurerm_firewall" "uks-fw1" {
-  name                = "fw-${var.uks}-01"
+  name                = "fw-${var.labname}-${var.uks}-01"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
   sku_name            = "AZFW_VNet"
@@ -898,28 +667,6 @@ resource "azurerm_firewall" "uks-fw1" {
   }
 }
 
-# resource "azurerm_firewall" "ukw-fw1" {
-#   name                = "fw-${var.ukw}-01"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   sku_name            = "AZFW_VNet"
-#   sku_tier            = "Basic"
-#   threat_intel_mode   = "Off"
-
-#   ip_configuration {
-#     name                 = "ipconfig-fw-${var.ukw}"
-#     subnet_id            = azurerm_subnet.ukw-hub1-subnetfw.id
-#     public_ip_address_id = azurerm_public_ip.ukw-fwpip.id
-#   }
-
-#   management_ip_configuration {
-#     name                 = "ipconfig-fwman-${var.ukw}"
-#     subnet_id            = azurerm_subnet.ukw-hub1-subnetfwman.id
-#     public_ip_address_id = azurerm_public_ip.ukw-fwmanpip.id
-#   }
-
-# }
-
 /*******************************************************************************
                          CREATE FIREWALL RULES
 *******************************************************************************/
@@ -937,21 +684,6 @@ resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
     protocols             = ["Any"]
   }
 }
-
-# resource "azurerm_firewall_network_rule_collection" "ukw-outbound" {
-#   name                = "${var.ukw}-outbound"
-#   azure_firewall_name = azurerm_firewall.ukw-fw1.name
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   priority            = 100
-#   action              = "Allow"
-#   rule {
-#     name                  = "${var.ukw}-outbound"
-#     source_addresses      = [var.ukwcidr]
-#     destination_addresses = ["*"]
-#     destination_ports     = ["*"]
-#     protocols             = ["Any"]
-#   }
-# }
 
 /*******************************************************************************
                          CREATE NAT RULES
@@ -987,37 +719,6 @@ resource "azurerm_firewall_nat_rule_collection" "uks-nat" {
     ]
   }
 }
-# resource "azurerm_firewall_nat_rule_collection" "ukw-nat" {
-#   name                = "${var.ukw}-nat1"
-#   azure_firewall_name = azurerm_firewall.ukw-fw1.name
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   priority            = 100
-#   action              = "Dnat"
-
-#   rule {
-#     name = "${var.ukw}-nat1"
-
-#     source_addresses = [
-#       "*",
-#     ]
-
-#     destination_ports = [
-#       "80",
-#     ]
-
-#     destination_addresses = [
-#       azurerm_public_ip.ukw-fwpip.ip_address
-#     ]
-
-#     translated_port = 80
-
-#     translated_address = azurerm_lb.ukw-lb.frontend_ip_configuration[0].private_ip_address
-
-#     protocols = [
-#       "TCP",
-#     ]
-#   }
-# }
 
 /*******************************************************************************
                          CREATE LOAD BALANCERS
@@ -1040,20 +741,6 @@ resource "azurerm_lb" "uks-lb" {
   }
 }
 
-# resource "azurerm_lb" "ukw-lb" {
-#   name                = "lb-int-${var.ukw}"
-#   location            = var.ukw
-#   resource_group_name = azurerm_resource_group.ukw.name
-#   sku                 = "Standard"
-
-#   frontend_ip_configuration {
-#     name                          = "fip-lb-int-${var.uks}"
-#     subnet_id                     = azurerm_subnet.ukw-hub1-subnetlb.id
-#     private_ip_address            = cidrhost("${var.ukwcidr}", 260)
-#     private_ip_address_allocation = "static"
-#   }
-# }
-
 /*******************************************************************************
                          CREATE LB PROBES
 *******************************************************************************/
@@ -1065,14 +752,6 @@ resource "azurerm_lb_probe" "uks-probe" {
   interval_in_seconds = 60
   request_path        = "/"
 }
-# resource "azurerm_lb_probe" "ukw-probe" {
-#   loadbalancer_id     = azurerm_lb.ukw-lb.id
-#   name                = "http-probe"
-#   port                = 80
-#   protocol            = "Http"
-#   interval_in_seconds = 60
-#   request_path        = "/"
-# }
 
 /*******************************************************************************
                          CREATE LB BACKEND POOLS
@@ -1081,10 +760,6 @@ resource "azurerm_lb_backend_address_pool" "uks-pool" {
   loadbalancer_id = azurerm_lb.uks-lb.id
   name            = "BackEndAddressPool"
 }
-# resource "azurerm_lb_backend_address_pool" "ukw-pool" {
-#   loadbalancer_id = azurerm_lb.ukw-lb.id
-#   name            = "BackEndAddressPool"
-# }
 
 /*******************************************************************************
                          CREATE LB NIC ASSOCIATION
@@ -1101,18 +776,6 @@ resource "azurerm_network_interface_backend_address_pool_association" "uks-b" {
   ip_configuration_name   = "${var.uks}-nic-b-${count.index}-ipconfig"
   backend_address_pool_id = azurerm_lb_backend_address_pool.uks-pool.id
 }
-# resource "azurerm_network_interface_backend_address_pool_association" "ukw-a" {
-#   count                   = var.servercounta
-#   network_interface_id    = azurerm_network_interface.ukw-anics[count.index].id
-#   ip_configuration_name   = "${var.ukw}-nic-a-${count.index}-ipconfig"
-#   backend_address_pool_id = azurerm_lb_backend_address_pool.ukw-pool.id
-# }
-# resource "azurerm_network_interface_backend_address_pool_association" "ukw-b" {
-#   count                   = var.servercountb
-#   network_interface_id    = azurerm_network_interface.ukw-bnics[count.index].id
-#   ip_configuration_name   = "${var.ukw}-nic-b-${count.index}-ipconfig"
-#   backend_address_pool_id = azurerm_lb_backend_address_pool.ukw-pool.id
-# }
 
 /*******************************************************************************
                          CREATE LB RULES
@@ -1127,22 +790,12 @@ resource "azurerm_lb_rule" "uks-rule" {
   probe_id                       = azurerm_lb_probe.uks-probe.id
   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.uks-pool.id]
 }
-# resource "azurerm_lb_rule" "ukw-rule" {
-#   loadbalancer_id                = azurerm_lb.ukw-lb.id
-#   name                           = "LBRule"
-#   protocol                       = "Tcp"
-#   frontend_port                  = 80
-#   backend_port                   = 80
-#   frontend_ip_configuration_name = azurerm_lb.uks-lb.frontend_ip_configuration[0].name
-#   probe_id                       = azurerm_lb_probe.ukw-probe.id
-#   backend_address_pool_ids       = [azurerm_lb_backend_address_pool.ukw-pool.id]
-# }
 
 /*******************************************************************************
                          CREATE TRAFFIC MANAGER
 *******************************************************************************/
 resource "azurerm_traffic_manager_profile" "tm1" {
-  name                   = "tm-${var.labname}"
+  name                   = "tm-${var.labname}-${var.uks}-01"
   resource_group_name    = azurerm_resource_group.uks.name
   traffic_routing_method = "Weighted"
 
@@ -1171,12 +824,6 @@ resource "azurerm_traffic_manager_azure_endpoint" "uks-tme1" {
   weight             = 100
   target_resource_id = azurerm_public_ip.uks-fwpip.id
 }
-# resource "azurerm_traffic_manager_azure_endpoint" "ukw-tme1" {
-#   name               = "${var.ukw}-endpoint"
-#   profile_id         = azurerm_traffic_manager_profile.tm1.id
-#   weight             = 100
-#   target_resource_id = azurerm_public_ip.ukw-fwpip.id
-# }
 
 /*******************************************************************************
                          CREATE STORAGE ACCOUNTS
@@ -1188,7 +835,7 @@ env to simulate a FA relying on a VM to be up and running.
 ***/
 
 resource "azurerm_storage_account" "uks-sa1" {
-  name                     = "sa${var.uks}01"
+  name                     = "sa${var.uks}${random_string.random.result}01"
   resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   account_tier             = var.uksaccounttier
@@ -1201,7 +848,7 @@ resource "azurerm_storage_account" "uks-sa1" {
 }
 
 resource "azurerm_storage_account" "uks-vm1" {
-  name                     = "sa${var.uks}vmdiag"
+  name                     = "sa${var.uks}vmdiag${random_string.random.result}"
   resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   account_tier             = var.uksaccounttier
@@ -1213,24 +860,75 @@ resource "azurerm_storage_account" "uks-vm1" {
   }
 }
 
-# resource "azurerm_storage_account" "ukw-vm1" {
-#   name                     = "sa${var.ukw}vmdiag"
-#   resource_group_name      = azurerm_resource_group.ukw.name
-#   location                 = azurerm_resource_group.ukw.location
-#   account_tier             = var.uksaccounttier
-#   account_replication_type = var.uksart
-#   min_tls_version = "TLS1_2"
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
+resource "azurerm_storage_management_policy" "uks_vm1_policy" {
+  storage_account_id = azurerm_storage_account.uks-vm1.id
+}
+
+/*******************************************************************************
+                         CREATE LOG ANALYTICS
+*******************************************************************************/
+resource "azurerm_log_analytics_workspace" "vm_fa_logging" {
+  name                = "uks-vm-fa-logs"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+resource "azurerm_log_analytics_workspace" "db_bus_logging" {
+  name                = "uks-db-bus-logs"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+resource "azurerm_log_analytics_workspace" "other_logging" {
+  name                = "uks-other-logs"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+/*******************************************************************************
+                    CREATE MONITORING AND DIAGNOSTICS
+*******************************************************************************/
+resource "azurerm_monitor_diagnostic_setting" "vm_fa_diag" {
+  name                       = "vm-fa-diagnostics"
+  target_resource_id         = azurerm_storage_account.uks-vm1.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.vm_fa_logging.id
+
+  enabled_log {
+    category = "AuditLogs"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "db_bus_diag" {
+  name                       = "db-bus-diagnostics"
+  target_resource_id         = azurerm_storage_account.uks-vm1.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.db_bus_logging.id
+
+  enabled_log {
+    category = "AuditLogs"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "other_diag" {
+  name                       = "other-diagnostics"
+  target_resource_id         = azurerm_storage_account.uks-vm1.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.other_logging.id
+
+  enabled_log {
+    category = "AuditLogs"
+  }
+}
 
 /*******************************************************************************
                          CREATE APP SERVICE PLAN
 *******************************************************************************/
 resource "azurerm_service_plan" "uks-asp" {
-  name                = "${var.uks}-asp-01"
+  name                = "asp-${var.labname}-${var.uks}-01"
   resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   os_type             = var.uks-asp-os
@@ -1245,7 +943,7 @@ resource "azurerm_service_plan" "uks-asp" {
                          CREATE FUNCTION APP
 *******************************************************************************/
 resource "azurerm_linux_function_app" "uks-fa" {
-  name                       = "sa-${var.uks}-fa01"
+  name                       = "fa-${var.labname}-${var.uks}-${random_string.random.result}"
   resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   service_plan_id        = azurerm_service_plan.uks-asp.id
@@ -1275,9 +973,127 @@ resource "azurerm_linux_function_app" "uks-fa" {
   }
 }
 
+resource "azurerm_function_app_function" "cosmos_trigger" {
+  name            = "cosmosTrigger"
+  function_app_id = azurerm_linux_function_app.uks-fa.id
+  config_json     = <<EOT
+{
+  "bindings": [
+    {
+      "type": "cosmosDBTrigger",
+      "name": "cosmosTrigger",
+      "direction": "in",
+      "connection": "${azurerm_cosmosdb_account.cs_cosmosdb.primary_key}",
+      "databaseName": "super_secret_stuff",
+      "collectionName": "users",
+      "leaseCollectionName": "leases",
+      "createLeaseCollectionIfNotExists": true
+    },
+    {
+      "type": "serviceBus",
+      "name": "serviceBusQueue",
+      "direction": "out",
+      "queueName": "task_processing",
+      "connection": "${azurerm_servicebus_namespace.cs_servicebus_ns.default_primary_connection_string}"
+    },
+    {
+      "type": "eventHub",
+      "name": "eventHubOutput",
+      "direction": "out",
+      "eventHubName": "event_alerts",
+      "connection": "${azurerm_eventhub_namespace.cs_eventhub_ns.default_primary_connection_string}"
+    }
+  ]
+}
+EOT
+}
+
 data "azurerm_linux_function_app" "uks-fa" {
   name = azurerm_linux_function_app.uks-fa.name
   resource_group_name = azurerm_linux_function_app.uks-fa.resource_group_name
+}
+
+/*******************************************************************************
+                            CREATE COSMOS DB
+*******************************************************************************/
+
+resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
+  name                = "cosmos-${var.labname}-${var.uks}-01"
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
+  offer_type          = "Standard"
+  kind               = "GlobalDocumentDB"
+
+  consistency_policy {
+    consistency_level = "Session"
+  }
+
+  capabilities {
+    name = "EnableServerless"
+  }
+  geo_location {
+    location          = "uksouth"
+    failover_priority = 1
+  }
+}
+
+resource "azurerm_cosmosdb_mongo_database" "databases" {
+  for_each            = var.cosmos_databases
+  name                = each.key
+  resource_group_name = azurerm_resource_group.uks.name
+  account_name        = azurerm_cosmosdb_account.cs_cosmosdb.name
+}
+
+resource "azurerm_cosmosdb_mongo_collection" "collections" {
+  for_each            = { for db_name, db_data in var.cosmos_databases : db_name => db_data.collections }
+  name                = each.value
+  resource_group_name = azurerm_resource_group.uks.name
+  account_name        = azurerm_cosmosdb_account.cs_cosmosdb.name
+  database_name       = azurerm_cosmosdb_mongo_database.databases[each.key].name
+
+  default_ttl_seconds = 777
+  shard_key           = "uniqueKey"
+  throughput          = 400
+
+  index {
+    keys   = ["_id"]
+    unique = true
+  }
+}
+/*******************************************************************************
+                            CREATE EVENT HUB
+*******************************************************************************/
+resource "azurerm_eventhub_namespace" "cs_eventhub_ns" {
+  name                = "eh-${var.labname}-${var.uks}-01"
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
+  sku                 = "Standard"
+  capacity            = 2
+}
+
+resource "azurerm_eventhub" "cs_event_hubs" {
+  for_each            = var.event_hubs
+  name                = each.key
+  namespace_id      = azurerm_eventhub_namespace.cs_eventhub_ns.name
+  partition_count     = each.value.partitions
+  message_retention   = each.value.message_retention
+}
+
+/*******************************************************************************
+                            CREATE SERVICE BUS
+*******************************************************************************/
+resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
+  name                = "sb-${var.labname}-${var.uks}-01"
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
+  sku                 = "Standard"
+}
+
+resource "azurerm_servicebus_queue" "servicebus_queues" {
+  for_each            = var.servicebus_queues
+  name                = each.key
+  namespace_id      = azurerm_servicebus_namespace.cs_servicebus_ns.name
+  max_delivery_count  = each.value.max_delivery_count
 }
 
 /*******************************************************************************
@@ -1377,11 +1193,23 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
   scope          = azurerm_resource_group.uks.id
 }
 
-# resource "azurerm_role_assignment" "storage_blob_data_reader2" {
-#   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
-#   role_definition_name = "Storage Account Contributor"
-#   scope          = azurerm_storage_account.uks-vm1.id
-# }
+resource "azurerm_role_assignment" "function_cosmosdb_role" {
+  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  role_definition_name = "Cosmos DB Account Contributor"
+  scope               = azurerm_cosmosdb_account.cs_cosmosdb.id
+}
+
+resource "azurerm_role_assignment" "function_servicebus_role" {
+  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  role_definition_name = "Azure Service Bus Data Sender"
+  scope               = azurerm_servicebus_namespace.cs_servicebus_ns.default_primary_connection_string
+}
+
+resource "azurerm_role_assignment" "function_eventhub_role" {
+  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  role_definition_name = "Azure Event Hubs Data Sender"
+  scope               = azurerm_eventhub_namespace.cs_eventhub_ns.default_primary_connection_string
+}
 
 /*******************************************************************************
 ********************************************************************************
@@ -1412,7 +1240,7 @@ resource "azuread_application" "cs_app" {
 }
 
 resource "azuread_service_principal" "cs_sp" {
-  application_id = azuread_application.cs_app.application_id
+  client_id = azuread_application.cs_app.client_id
 }
 
 resource "azuread_service_principal_password" "cs_sp_pw" {
@@ -1421,7 +1249,7 @@ resource "azuread_service_principal_password" "cs_sp_pw" {
 }
 
 output "client_id" {
-  value = azuread_service_principal.cs_sp.application_id
+  value = azuread_service_principal.cs_sp.client_id
 }
 output "client_secret" {
   value = azuread_service_principal_password.cs_sp_pw.value
@@ -1432,19 +1260,10 @@ output "client_secret" {
                            SERVICE PRINCIPAL ROLES
 ********************************************************************************/
 resource "azurerm_role_assignment" "chaos_contributor_sp" {
-  principal_id   = azuread_service_principal.cs_sp.id
-  role_definition_name = "Chaos Contributor"
+  principal_id   = azuread_service_principal.cs_sp.object_id
+  role_definition_name = "Chaos Studio Experiment Contributor"
   scope = azurerm_resource_group.uks.id
-  #scope          = data.azurerm_subscription.primary.id
 }
-
-# resource "azurerm_role_assignment" "vm_reader" {
-#   principal_id   = azuread_service_principal.example.id
-#   role_definition_name = "Reader"
-#   scope          = azurerm_windows_virtual_machine.uks-vmsa[0].id  # Replace with your VM's ID
-# }
-
-
 
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
@@ -1453,20 +1272,22 @@ resource "azurerm_chaos_studio_target" "tgt-uks_vmsa" {
   count               = var.servercounta
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[count.index].id
-  target_type         = "Microsoft-Agent"
+  target_type         = "Microsoft-VirtualMachine"
 }
 
-# resource "azurerm_chaos_studio_target" "tgt-uks_vmsa_1" {
-#   location            = azurerm_resource_group.uks.location
-#   target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[1].id
-#   target_type         = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "tgt-uks_vmsb" {
+  count               = var.servercounta
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsb[count.index].id
+  target_type         = "Microsoft-VirtualMachine"
+}
 
-# resource "azurerm_chaos_studio_target" "tgt-uks_vmsa_2" {
-#   location            = azurerm_resource_group.uks.location
-#   target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[2].id
-#   target_type         = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "tgt_uks_vmss" {
+  count               = var.vmsscounta
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].id
+  target_type         = "Microsoft-VirtualMachineScaleSet"
+}
 
 /********************************************************************************
                  ADD SERVICE-BASED TARGETS TO CHAOS STUDIO
@@ -1474,35 +1295,122 @@ resource "azurerm_chaos_studio_target" "tgt-uks_vmsa" {
 resource "azurerm_chaos_studio_target" "tgt-key_vault_target" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_key_vault.kv1.id
-  target_type         = "Microsoft-Service"
+  target_type         = "Microsoft-KeyVault"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-app_service_target" {
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = azurerm_service_plan.uks-asp.id
-  target_type         = "Microsoft-Service"
+  target_resource_id  = azurerm_linux_function_app.uks-fa.id
+  target_type         = "Microsoft-AppService"
 }
+
+resource "azurerm_chaos_studio_target" "tgt-servicebus" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_servicebus_namespace.cs_servicebus_ns.id
+  target_type         = "Microsoft.ServiceBus"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-cosmosdb" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_cosmosdb_account.cs_cosmosdb.id
+  target_type         = "Microsoft.DocumentDB"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-eventhub" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_eventhub_namespace.cs_eventhub_ns.id
+  target_type         = "Microsoft.EventHub"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-vms" {
+  count               = length(data.azurerm_virtual_machine.availability_zone_vms[*].id)
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = data.azurerm_virtual_machine.availability_zone_vms[*].id[count.index]
+  target_type         = "Microsoft-VirtualMachine"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-vmss" {
+  count               = length(data.azurerm_virtual_machine_scale_set.availability_zone_vmss[*].id)
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = data.azurerm_virtual_machine_scale_set.availability_zone_vmss[*].id[count.index]
+  target_type         = "Microsoft-VirtualMachineScaleSet"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.chaos_exp_logs.id
+  target_type         = "Microsoft.Storage"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-uks-sa1" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.uks-sa1.id
+  target_type         = "Microsoft.Storage"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-uks-vm1" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.uks-vm1.id
+  target_type         = "Microsoft.Storage"
+}
+
+# resource "azurerm_chaos_studio_target" "tgt-sqldb" {
+#   location            = azurerm_resource_group.uks.location
+#   target_resource_id  = azurerm_mssql_database.sqldb.id
+#   target_type         = "Microsoft.Sql"
+# }
 
 /********************************************************************************
                      ADD CHAOS STUDIO CAPABILITIES
 ********************************************************************************/
 
-resource "azurerm_chaos_studio_capability" "cap_net_disconnect" {
+resource "azurerm_chaos_studio_capability" "cap_vm_shutdown" {
+  count                  = length(azurerm_chaos_studio_target.tgt-vms)
+  capability_type        = "Shutdown-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-vms[count.index].id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_vm_redeploy" {
   count                  = var.servercounta
-  capability_type        = "NetworkDisconnect-1.1"
+  capability_type        = "Redeploy-1.0"
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-uks_vmsa[count.index].id
 }
 
-resource "azurerm_chaos_studio_capability" "cap_cpupressure" {
-  count                  = var.servercounta
-  capability_type        = "CPUPressure-1.0"
-  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-uks_vmsa[count.index].id
+resource "azurerm_chaos_studio_capability" "cap_vmss_shutdown" {
+  count                  = length(azurerm_chaos_studio_target.tgt-vmss)
+  capability_type        = "Shutdown-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-vmss[count.index].id
 }
 
+resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
+  count                  = var.vmsscounta
+  capability_type        = "Shutdown-2.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt_uks_vmss[count.index].id
+}
 
-# resource "azurerm_chaos_studio_capability" "cap_net_disconnect_0" {
-#   capability_type        = "NetworkDisconnect-1.1"
-#   chaos_studio_target_id = azurerm_chaos_studio_target.uks_vmsa_0.id
+resource "azurerm_chaos_studio_capability" "cap_servicebus_latency" {
+  capability_type        = "LatencyInjection-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-servicebus.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
+  capability_type        = "Failover-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-cosmosdb.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_eventhub_throttle" {
+  capability_type        = "Throttling-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-eventhub.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_storage_unavailable" {
+  capability_type        = "StorageUnavailable-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-azurestorage.id
+}
+
+# resource "azurerm_chaos_studio_capability" "cap_sqldb_failover" {
+#   capability_type        = "Failover-1.0"
+#   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-sqldb.id
 # }
 
 /********************************************************************************
@@ -1527,212 +1435,91 @@ East US, causing compute nodes to become unhealthy. While a majority rebooted
 successfully, a subset did not. This led to failures and timeouts for Azure SQL
 Databases, impacting several services including Virtual Machines, SQL DBs, and
 Event Hubs.
-
-NTS: I need to add in CosmosDB, Event Hub and Service Bus to match the PIR
-against the solution.
 ********************************************************************************/
 
-# resource "azurerm_chaos_studio_experiment" "vm_disruption_sept_2023" {
-#   name                = "vm-disruption-sept-2023"
-#   resource_group_name = azurerm_resource_group.uks.name
-#   location            = azurerm_resource_group.uks.location
+resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
+  name                = "pir-2lz0-3dg"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
 
-#   steps {
-#     name = "NetworkDisruptionStep"
+  identity {
+    type = "SystemAssigned"
+  }
 
-#     branches {
-#       name = "Branch1"
+  selectors {
+    name                    = "Selector1"
+    chaos_studio_target_ids = concat(
+      azurerm_chaos_studio_target.tgt-servicebus.id,
+      azurerm_chaos_studio_target.tgt-cosmosdb.id,
+      azurerm_chaos_studio_target.tgt-eventhub.id,
+      azurerm_chaos_studio_target.tgt-vms[*].id,
+      azurerm_chaos_studio_target.tgt-vmss[*].id
+    )
+  }
 
-#       actions {
-#         name          = "NetworkDisconnect"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  steps {
+    name = "VMDisruptionStep"
+    branch {
+      name = "Branch1"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_vm_shutdown[*].urn
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_vmss_shutdown[*].urn
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+    }
+  }
 
-#         action_type   = "Microsoft.Network/PacketLoss/1.0"
-#         parameters = {
-#           duration = "PT5M"  # Simulate 5 minutes of network packet loss
-#         }
-#       }
-#     }
-#   }
+  steps {
+    name = "ServiceDisruptionStep"
+    branch {
+      name = "Branch2"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
+}
 
-#   steps {
-#     name = "CPULoadAndDiskStressStep"
-#     start_after = ["NetworkDisruptionStep"]
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex1" {
+  name                       = "pir-2lz03dg-chaos-experiment-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.pir_2lz0_3dg.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-#     branches {
-#       name = "Branch2"
+  enabled_log {
+    category = "ChaosEvents"
+  }
 
-#       actions {
-#         name          = "HighCPUUsage"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
-
-#         action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
-#         parameters = {
-#           duration      = "PT10M"   # High CPU stress for 10 minutes
-#           cpuPercentage = "90"      # Simulate 90% CPU usage
-#         }
-#       }
-
-#       actions {
-#         name          = "HighDiskIO"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
-
-#         action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
-#         parameters = {
-#           duration = "PT10M"   # High disk IO for 10 minutes
-#         }
-#       }
-#     }
-#   }
-
-#   steps {
-#     name = "ShutdownVM"
-#     start_after = ["CPULoadAndDiskStressStep"]
-
-#     branches {
-#       name = "Branch3"
-
-#       actions {
-#         name          = "CrashVM"
-#         type          = "Immediate"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
-
-#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-#       }
-#     }
-#   }
-
-#   identity {
-#     type = "SystemAssigned"
-#   }
-# }
-
-
-
-
-
-# resource "azurerm_chaos_studio_experiment" "azure_outage_july_2024" {
-#   name                = "azure-outage-july-2024"
-#   resource_group_name = azurerm_resource_group.uks.name
-#   location            = azurerm_resource_group.uks.location
-
-#   step {
-#     name = "NetworkPartitionStep"
-
-#     action {
-#       name          = "NetworkPartition"
-#       type          = "Continuous"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#       action_type   = "Microsoft.Network/PacketLoss/1.0"
-#       parameters = {
-#         duration = "PT5M"  # Simulate 5 minutes of network packet loss
-#       }
-#     }
-
-#     action {
-#       name          = "NetworkPartitionRegion2"
-#       type          = "Continuous"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
-
-#       action_type   = "Microsoft.Network/PacketLoss/1.0"
-#       parameters = {
-#         duration = "PT5M"  # Simulate network disruption across different regions/zones
-#       }
-#     }
-#   }
-
-#   step {
-#     name = "ServiceDegradationStep"
-
-#     action {
-#       name          = "HighCPUUsage"
-#       type          = "Continuous"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#       action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
-#       parameters = {
-#         duration      = "PT10M"   # High CPU stress for 10 minutes
-#         cpuPercentage = "85"      # Simulate 85% CPU usage
-#       }
-#     }
-
-#     action {
-#       name          = "HighDiskIO"
-#       type          = "Continuous"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#       action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
-#       parameters = {
-#         duration = "PT10M"   # High disk IO for 10 minutes
-#       }
-#     }
-#   }
-
-#   step {
-#     name = "ZoneFailureStep"
-
-#     action {
-#       name          = "Zone1Failure"
-#       type          = "Immediate"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#       action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-#     }
-
-#     action {
-#       name          = "Zone3Failure"
-#       type          = "Immediate"
-#       selector      = "targets"
-#       target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[2].id
-
-#       action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-#     }
-#   }
-
-#   identity {
-#     type = "SystemAssigned"
-#   }
-# }
-
-
-# resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics_exp_1" {
-#   name               = "chaos-diagnostics-exp-1"
-#   target_resource_id = azurerm_chaos_experiment.vm_disruption_sept_2023.id
-#   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-
-#   enabled_log {
-#     category = "ChaosEvents"
-#     retention_policy {
-#       enabled = true
-#       days    = 30
-#     }
-#   }
-
-#   metric {
-#     category = "AllMetrics"
-#     retention_policy {
-#       enabled = true
-#       days    = 30
-#     }
-#   }
-
-
-#   #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
-
-# }
+  metric {
+    category = "AllMetrics"
+  }
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+}
 
 /********************************************************************************
 Notes:
@@ -1742,144 +1529,146 @@ dated 18-JUL-24.
 A misconfiguration in Azure's Central US region disrupted backend communication
 between compute and storage clusters, causing widespread service outages for
 Azure Storage, SQL Database, Cosmos DB, Teams, and other services.
-
-NTS: I need to add in CosmosDB, to help match the PIR against the solution.
 ********************************************************************************/
 
-# resource "azurerm_chaos_studio_experiment" "azure_outage_july_2024" {
-#   name                = "azure-outage-july-2024"
-#   resource_group_name = azurerm_resource_group.uks.name
-#   location            = azurerm_resource_group.uks.location
+resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
+  name                = "pir-1k90-n8"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
 
-#   steps {
-#     name = "NetworkPartitionStep"
+  identity {
+    type = "SystemAssigned"
+  }
 
-#     branches {
-#       name = "Branch1"
+  selectors {
+    name                    = "Selector1"
+    chaos_studio_target_ids = concat(
+      azurerm_chaos_studio_target.tgt-servicebus.id,
+      azurerm_chaos_studio_target.tgt-cosmosdb.id,
+      azurerm_chaos_studio_target.tgt-eventhub.id,
+      azurerm_chaos_studio_target.tgt-azurestorage.id,
+      #azurerm_chaos_studio_target.tgt-sqldb.id,
+      azurerm_chaos_studio_target.tgt-vms[*].id,
+      azurerm_chaos_studio_target.tgt-vmss[*].id
+    )
+  }
 
-#       actions {
-#         name          = "NetworkPartition"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
+  steps {
+    name = "ComputeAndStorageDisruption"
+    branch {
+      name = "Branch1"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_storage_unavailable.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_cosmosdb_failover.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
 
-#         action_type   = "Microsoft.Network/PacketLoss/1.0"
-#         parameters = {
-#           duration = "PT5M"  # Simulate 5 minutes of network packet loss
-#         }
-#       }
+  steps {
+    name = "ServiceDisruption"
+    branch {
+      name = "Branch2"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
 
-#       actions {
-#         name          = "NetworkPartitionRegion2"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[1].id
+  steps {
+    name = "VMDisruption"
+    branch {
+      name = "Branch3"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_vm_shutdown[*].urn
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_vmss_shutdown[*].urn
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+    }
+  }
+}
 
-#         action_type   = "Microsoft.Network/PacketLoss/1.0"
-#         parameters = {
-#           duration = "PT5M"  # Simulate network disruption across different regions/zones
-#         }
-#       }
-#     }
-#   }
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex2" {
+  name                       = "pir-1k90n8-chaos-experiment-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.pir_1k90_n8.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-#   steps {
-#     name = "ServiceDegradationStep"
-#     start_after = ["NetworkPartitionStep"]
+  enabled_log {
+    category = "ChaosEvents"
+  }
 
-#     branches {
-#       name = "Branch2"
-
-#       actions {
-#         name          = "HighCPUUsage"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#         action_type   = "Microsoft.VirtualMachine/StressCpu/1.0"
-#         parameters = {
-#           duration      = "PT10M"   # High CPU stress for 10 minutes
-#           cpuPercentage = "85"      # Simulate 85% CPU usage
-#         }
-#       }
-
-#       actions {
-#         name          = "HighDiskIO"
-#         type          = "Continuous"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#         action_type   = "Microsoft.VirtualMachine/HighDiskIO/1.0"
-#         parameters = {
-#           duration = "PT10M"   # High disk IO for 10 minutes
-#         }
-#       }
-#     }
-#   }
-
-#   steps {
-#     name = "ZoneFailureStep"
-#     start_after = ["ServiceDegradationStep"]
-
-#     branches {
-#       name = "Branch3"
-
-#       actions {
-#         name          = "Zone1Failure"
-#         type          = "Immediate"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-
-#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-#         parameters = {
-#           duration = "PT5M"  # Simulate Availability Zone 1 failure (shutdown VM)
-#         }
-#       }
-
-#       actions {
-#         name          = "Zone3Failure"
-#         type          = "Immediate"
-#         target_type   = "Microsoft-Agent"
-#         target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[2].id
-
-#         action_type   = "Microsoft.VirtualMachine/Shutdown/1.0"
-#         parameters = {
-#           duration = "PT5M"  # Simulate Availability Zone 3 failure (shutdown VM)
-#         }
-#       }
-#     }
-#   }
-
-#   identity {
-#     type = "SystemAssigned"
-#   }
-# }
-
-# resource "azurerm_monitor_diagnostic_setting" "chaos_diagnostics_exp_2" {
-#   name               = "chaos-diagnostics-exp-2"
-#   target_resource_id = azurerm_chaos_experiment.azure_outage_july_2024.id
-#   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-
-#   enabled_log {
-#     category = "ChaosEvents"
-#     retention_policy {
-#       enabled = true
-#       days    = 30
-#     }
-#   }
-
-#   metric {
-#     category = "AllMetrics"
-#     retention_policy {
-#       enabled = true
-#       days    = 30
-#     }
-#   }
+  metric {
+    category = "AllMetrics"
+  }
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+}
 
 
-#   #instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
+/*******************************************************************************
+                    CREATE CHAOS STUDIO LOGGING AND METRICS
+*******************************************************************************/
+resource "azurerm_storage_account" "chaos_exp_logs" {
+  name                     = "ukschaosstoragelogs"
+  resource_group_name       = azurerm_resource_group.uks.name
+  location                 = azurerm_resource_group.uks.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
 
-# }
+resource "azurerm_log_analytics_workspace" "chaos_logging" {
+  name                = "uks-chaos-logs"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_exp_diag" {
+  name                       = "chaos-experiment-diagnostics"
+  target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "ChaosEvents"
+  }
+}
 
 /********************************************************************************
                      ADD CHAOS STUDIO EXPERIMENTS (UK South Outages)

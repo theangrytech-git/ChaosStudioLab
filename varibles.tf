@@ -85,3 +85,36 @@ variable "days_to_expire" {
   description = "Days until Secret/Cert expire"
   type = number
 }
+
+variable "cosmos_databases" {
+  type = map(object({
+    collections = list(string)
+  }))
+  default = {
+    super_secret_stuff = { collections = ["users", "accountnumber", "transactions"] }
+    banking_stuff      = { collections = ["balance", "loans", "accounts"] }
+    secret_pid         = { collections = ["classified", "name", "address", "logs"] }
+  }
+}
+
+variable "servicebus_queues" {
+  type = map(object({
+    max_delivery_count = number
+    enable_partitioning = bool
+  }))
+  default = {
+    email_notifications = { max_delivery_count = 10, enable_partitioning = true }
+    task_processing     = { max_delivery_count = 5, enable_partitioning = false }
+  }
+}
+
+variable "event_hubs" {
+  type = map(object({
+    partitions = number
+    message_retention = number
+  }))
+  default = {
+    event_alerts = { partitions = 2, message_retention = 7 }
+    system_logs  = { partitions = 4, message_retention = 14 }
+  }
+}
