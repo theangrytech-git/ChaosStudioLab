@@ -47,6 +47,14 @@ output "public_ip" {
 locals {
   days_to_hours = var.days_to_expire * 24
   expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+flattened_collections = merge([
+    for db_name, db in var.cosmos_databases : {
+      for collection in db.collections : "${db_name}-${collection}" => {
+        database_name  = db_name
+        collection_name = collection
+      }
+    }
+  ]...)
 }
 
 /*******************************************************************************
@@ -185,12 +193,12 @@ data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "kv1" {
   depends_on                  = [azurerm_resource_group.uks]
-  name                        = "kv-${var.labname}-${var.uks}-${random_id.kvname.hex}"
+  name                        = "${random_id.kvname.hex}uks"
   location                    = var.uks
   resource_group_name         = azurerm_resource_group.uks.name
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
-  soft_delete_retention_days  = 7
+  #soft_delete_retention_days  = 7
   purge_protection_enabled    = false
   network_acls {
     default_action = "Deny"
@@ -449,6 +457,7 @@ data "azurerm_virtual_machine_scale_set" "availability_zone_vmss" {
   for_each            = toset(["1", "2"])
   name = "az-vmss"
   resource_group_name = azurerm_resource_group.uks.name
+  depends_on = [azurerm_linux_virtual_machine_scale_set.vmss]
 }
 
 resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
@@ -609,6 +618,7 @@ data "azurerm_virtual_machine" "availability_zone_vms" {
   for_each            = toset(["1", "2"])
   name = "az-vm"
   resource_group_name = azurerm_resource_group.uks.name
+  depends_on = [azurerm_linux_virtual_machine_scale_set.vmss]
 }
 
 /*******************************************************************************
@@ -862,6 +872,21 @@ resource "azurerm_storage_account" "uks-vm1" {
 
 resource "azurerm_storage_management_policy" "uks_vm1_policy" {
   storage_account_id = azurerm_storage_account.uks-vm1.id
+  rule {
+    name    = "DeleteOldBlobs"
+    enabled = true
+    filters {
+      blob_types = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        # delete {
+        #   days_after_modification_greater_than = 30
+        # }
+      }
+    }
+  }
+  
 }
 
 /*******************************************************************************
@@ -900,7 +925,7 @@ resource "azurerm_monitor_diagnostic_setting" "vm_fa_diag" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.vm_fa_logging.id
 
   enabled_log {
-    category = "AuditLogs"
+    category = "Transaction"
   }
 }
 
@@ -910,7 +935,7 @@ resource "azurerm_monitor_diagnostic_setting" "db_bus_diag" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.db_bus_logging.id
 
   enabled_log {
-    category = "AuditLogs"
+    category = "Transaction"
   }
 }
 
@@ -920,7 +945,7 @@ resource "azurerm_monitor_diagnostic_setting" "other_diag" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.other_logging.id
 
   enabled_log {
-    category = "AuditLogs"
+    category = "Transaction"
   }
 }
 
@@ -1032,8 +1057,8 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
     name = "EnableServerless"
   }
   geo_location {
-    location          = "uksouth"
-    failover_priority = 1
+    location          = var.uks
+    failover_priority = 0  # Must be (total regions - 1)
   }
 }
 
@@ -1045,11 +1070,12 @@ resource "azurerm_cosmosdb_mongo_database" "databases" {
 }
 
 resource "azurerm_cosmosdb_mongo_collection" "collections" {
-  for_each            = { for db_name, db_data in var.cosmos_databases : db_name => db_data.collections }
-  name                = each.value
+  for_each            = local.flattened_collections 
+  name                = each.value.collection_name
+  database_name       = each.value.database_name
   resource_group_name = azurerm_resource_group.uks.name
   account_name        = azurerm_cosmosdb_account.cs_cosmosdb.name
-  database_name       = azurerm_cosmosdb_mongo_database.databases[each.key].name
+
 
   default_ttl_seconds = 777
   shard_key           = "uniqueKey"
@@ -1074,9 +1100,9 @@ resource "azurerm_eventhub_namespace" "cs_eventhub_ns" {
 resource "azurerm_eventhub" "cs_event_hubs" {
   for_each            = var.event_hubs
   name                = each.key
-  namespace_id      = azurerm_eventhub_namespace.cs_eventhub_ns.name
+  namespace_id      = azurerm_eventhub_namespace.cs_eventhub_ns.id
   partition_count     = each.value.partitions
-  message_retention   = each.value.message_retention
+  message_retention   = 1
 }
 
 /*******************************************************************************
@@ -1092,7 +1118,7 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
 resource "azurerm_servicebus_queue" "servicebus_queues" {
   for_each            = var.servicebus_queues
   name                = each.key
-  namespace_id      = azurerm_servicebus_namespace.cs_servicebus_ns.name
+  namespace_id      = azurerm_servicebus_namespace.cs_servicebus_ns.id
   max_delivery_count  = each.value.max_delivery_count
 }
 
@@ -1194,19 +1220,19 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
 }
 
 resource "azurerm_role_assignment" "function_cosmosdb_role" {
-  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  principal_id         = azurerm_linux_function_app.uks-fa.identity[0].principal_id
   role_definition_name = "Cosmos DB Account Contributor"
   scope               = azurerm_cosmosdb_account.cs_cosmosdb.id
 }
 
 resource "azurerm_role_assignment" "function_servicebus_role" {
-  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  principal_id         = azurerm_linux_function_app.uks-fa.identity[0].principal_id
   role_definition_name = "Azure Service Bus Data Sender"
   scope               = azurerm_servicebus_namespace.cs_servicebus_ns.default_primary_connection_string
 }
 
 resource "azurerm_role_assignment" "function_eventhub_role" {
-  principal_id         = azurerm_linux_function_app.uks-fa.identity["principal_id"]
+  principal_id         = azurerm_linux_function_app.uks-fa.identity[0].principal_id
   role_definition_name = "Azure Event Hubs Data Sender"
   scope               = azurerm_eventhub_namespace.cs_eventhub_ns.default_primary_connection_string
 }
@@ -1323,16 +1349,16 @@ resource "azurerm_chaos_studio_target" "tgt-eventhub" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vms" {
-  count               = length(data.azurerm_virtual_machine.availability_zone_vms[*].id)
+  for_each            = data.azurerm_virtual_machine.availability_zone_vms
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = data.azurerm_virtual_machine.availability_zone_vms[*].id[count.index]
+  target_resource_id  = each.value.id
   target_type         = "Microsoft-VirtualMachine"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
-  count               = length(data.azurerm_virtual_machine_scale_set.availability_zone_vmss[*].id)
+  for_each            = data.azurerm_virtual_machine_scale_set.availability_zone_vmss
   location            = azurerm_resource_group.uks.location
-  target_resource_id  = data.azurerm_virtual_machine_scale_set.availability_zone_vmss[*].id[count.index]
+  target_resource_id  = each.value.id
   target_type         = "Microsoft-VirtualMachineScaleSet"
 }
 
@@ -1365,27 +1391,27 @@ resource "azurerm_chaos_studio_target" "tgt-uks-vm1" {
 ********************************************************************************/
 
 resource "azurerm_chaos_studio_capability" "cap_vm_shutdown" {
-  count                  = length(azurerm_chaos_studio_target.tgt-vms)
+  for_each                = azurerm_chaos_studio_target.tgt-vms
   capability_type        = "Shutdown-1.0"
-  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-vms[count.index].id
+  chaos_studio_target_id = each.value.id
 }
 
 resource "azurerm_chaos_studio_capability" "cap_vm_redeploy" {
-  count                  = var.servercounta
+  for_each                = azurerm_chaos_studio_target.tgt-vms
   capability_type        = "Redeploy-1.0"
-  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-uks_vmsa[count.index].id
+  chaos_studio_target_id = each.value.id
 }
 
 resource "azurerm_chaos_studio_capability" "cap_vmss_shutdown" {
-  count                  = length(azurerm_chaos_studio_target.tgt-vmss)
+  for_each                = azurerm_chaos_studio_target.tgt-vmss
   capability_type        = "Shutdown-1.0"
-  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-vmss[count.index].id
+  chaos_studio_target_id = each.value.id
 }
 
 resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
-  count                  = var.vmsscounta
+  for_each                = azurerm_chaos_studio_target.tgt-vmss
   capability_type        = "Shutdown-2.0"
-  chaos_studio_target_id = azurerm_chaos_studio_target.tgt_uks_vmss[count.index].id
+  chaos_studio_target_id = each.value.id
 }
 
 resource "azurerm_chaos_studio_capability" "cap_servicebus_latency" {
@@ -1449,11 +1475,11 @@ resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
   selectors {
     name                    = "Selector1"
     chaos_studio_target_ids = concat(
-      azurerm_chaos_studio_target.tgt-servicebus.id,
-      azurerm_chaos_studio_target.tgt-cosmosdb.id,
-      azurerm_chaos_studio_target.tgt-eventhub.id,
-      azurerm_chaos_studio_target.tgt-vms[*].id,
-      azurerm_chaos_studio_target.tgt-vmss[*].id
+      [azurerm_chaos_studio_target.tgt-servicebus.id],
+      [azurerm_chaos_studio_target.tgt-cosmosdb.id],
+      [azurerm_chaos_studio_target.tgt-eventhub.id],
+      values(azurerm_chaos_studio_target.tgt-vms)[*].id,
+      values(azurerm_chaos_studio_target.tgt-vmss)[*].id
     )
   }
 
@@ -1462,7 +1488,7 @@ resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
     branch {
       name = "Branch1"
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_vm_shutdown[*].urn
+        urn           = join("",values(azurerm_chaos_studio_capability.cap_vm_shutdown)[*].urn)
         selector_name = "Selector1"
         parameters = {
           abruptShutdown = "false"
@@ -1471,7 +1497,7 @@ resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
         duration    = "PT15M"
       }
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_vmss_shutdown[*].urn
+        urn = join("", values(azurerm_chaos_studio_capability.cap_vmss_shutdown)[*].urn)
         selector_name = "Selector1"
         parameters = {
           abruptShutdown = "false"
@@ -1543,13 +1569,13 @@ resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
   selectors {
     name                    = "Selector1"
     chaos_studio_target_ids = concat(
-      azurerm_chaos_studio_target.tgt-servicebus.id,
-      azurerm_chaos_studio_target.tgt-cosmosdb.id,
-      azurerm_chaos_studio_target.tgt-eventhub.id,
-      azurerm_chaos_studio_target.tgt-azurestorage.id,
-      #azurerm_chaos_studio_target.tgt-sqldb.id,
-      azurerm_chaos_studio_target.tgt-vms[*].id,
-      azurerm_chaos_studio_target.tgt-vmss[*].id
+      [azurerm_chaos_studio_target.tgt-servicebus.id],
+      [azurerm_chaos_studio_target.tgt-cosmosdb.id],
+      [azurerm_chaos_studio_target.tgt-eventhub.id],
+      [azurerm_chaos_studio_target.tgt-azurestorage.id],
+      # [azurerm_chaos_studio_target.tgt-sqldb.id],  # Uncomment when needed
+      values(azurerm_chaos_studio_target.tgt-vms)[*].id,
+      values(azurerm_chaos_studio_target.tgt-vmss)[*].id
     )
   }
 
@@ -1604,7 +1630,7 @@ resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
     branch {
       name = "Branch3"
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_vm_shutdown[*].urn
+        urn           = join("",values(azurerm_chaos_studio_capability.cap_vm_shutdown)[*].urn)
         selector_name = "Selector1"
         parameters = {
           abruptShutdown = "false"
@@ -1613,7 +1639,7 @@ resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
         duration    = "PT15M"
       }
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_vmss_shutdown[*].urn
+        urn = join("", values(azurerm_chaos_studio_capability.cap_vmss_shutdown)[*].urn)
         selector_name = "Selector1"
         parameters = {
           abruptShutdown = "false"
