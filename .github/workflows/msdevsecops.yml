@@ -8,31 +8,44 @@ jobs:
   sample:
     name: Microsoft Security DevOps
 
-    # Windows and Linux agents are supported
     runs-on: windows-latest
 
     permissions:
       contents: read
       id-token: write
       actions: read
-      # Write access for security-events is only required for customers looking for MSDO results to appear in the CodeQL security alerts tab on GitHub (Requires GHAS)
       security-events: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Checkout your code repository to scan
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Determine which tools should be enabled based on file presence
+      - name: Set environment variables for tools
+        run: |
+          TOOLS="bandit,checkov,templateanalyzer,terrascan,trivy"
 
-      # Run analyzers
-    - name: Run Microsoft Security DevOps
-      uses: microsoft/security-devops-action@latest
-      id: msdo
-      with:
-        tools: "bandit,binskim,checkov,eslint,templateanalyzer,terrascan,trivy"
+          # Check for JS/TS files before enabling ESLint
+          if git ls-files | grep -E '\.(js|ts)$' > /dev/null; then
+            TOOLS="$TOOLS,eslint"
+          fi
 
-      # Upload alerts to the Security tab - required for MSDO results to appear in the CodeQL security alerts tab on GitHub (Requires GHAS)
-    - name: Upload alerts to Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+          # Check for EXE/DLL files before enabling BinSkim
+          if git ls-files | grep -E '\.(exe|dll)$' > /dev/null; then
+            TOOLS="$TOOLS,binskim"
+          fi
+
+          echo "TOOLS=$TOOLS" >> $GITHUB_ENV
+
+      # Run analyzers only with available tools
+      - name: Run Microsoft Security DevOps
+        uses: microsoft/security-devops-action@latest
+        id: msdo
+        with:
+          tools: ${{ env.TOOLS }}
+
+      # Upload alerts to the Security tab
+      - name: Upload alerts to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
