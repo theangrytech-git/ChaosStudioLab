@@ -24,16 +24,70 @@ jobs:
       - name: Set environment variables for tools
         shell: pwsh
         run: |
-          $TOOLS = "bandit,checkov,templateanalyzer,terrascan,trivy"
+          $TOOLS = ""
 
-          # Check for JS/TS files before enabling ESLint
+          # Enable ESLint if JS/TS files exist
           if ((Get-ChildItem -Recurse -Include *.js, *.ts | Measure-Object).Count -gt 0) {
-            $TOOLS += ",eslint"
+            $TOOLS += "eslint,"
+            echo "ESLint enabled - JS/TS files detected."
+          } else {
+            echo "ESLint skipped - No JS/TS files found."
           }
 
-          # Check for EXE/DLL files before enabling BinSkim
+          # Enable BinSkim if EXE/DLL files exist
           if ((Get-ChildItem -Recurse -Include *.exe, *.dll | Measure-Object).Count -gt 0) {
-            $TOOLS += ",binskim"
+            $TOOLS += "binskim,"
+            echo "BinSkim enabled - EXE/DLL files detected."
+          } else {
+            echo "BinSkim skipped - No EXE/DLL files found."
+          }
+
+          # Enable Bandit if Python files exist
+          if ((Get-ChildItem -Recurse -Include *.py | Measure-Object).Count -gt 0) {
+            $TOOLS += "bandit,"
+            echo "Bandit enabled - Python files detected."
+          } else {
+            echo "Bandit skipped - No Python files found."
+          }
+
+          # Enable Checkov if Terraform files exist
+          if ((Get-ChildItem -Recurse -Include *.tf | Measure-Object).Count -gt 0) {
+            $TOOLS += "checkov,"
+            echo "Checkov enabled - Terraform files detected."
+          } else {
+            echo "Checkov skipped - No Terraform files found."
+          }
+
+          # Enable Template Analyzer if ARM templates exist
+          if ((Get-ChildItem -Recurse -Include *.json | Select-String 'resources' | Measure-Object).Count -gt 0) {
+            $TOOLS += "templateanalyzer,"
+            echo "Template Analyzer enabled - ARM templates detected."
+          } else {
+            echo "Template Analyzer skipped - No ARM templates found."
+          }
+
+          # Enable Terrascan if Terraform files exist
+          if ((Get-ChildItem -Recurse -Include *.tf | Measure-Object).Count -gt 0) {
+            $TOOLS += "terrascan,"
+            echo "Terrascan enabled - Terraform files detected."
+          } else {
+            echo "Terrascan skipped - No Terraform files found."
+          }
+
+          # Enable Trivy if Dockerfiles exist
+          if ((Get-ChildItem -Recurse -Include Dockerfile | Measure-Object).Count -gt 0) {
+            $TOOLS += "trivy,"
+            echo "Trivy enabled - Dockerfiles detected."
+          } else {
+            echo "Trivy skipped - No Dockerfiles found."
+          }
+
+          # Remove trailing comma if no tools found
+          $TOOLS = $TOOLS.TrimEnd(',')
+
+          if ($TOOLS -eq "") {
+            echo "No applicable tools found. The MSDO scan will be skipped."
+            exit 0
           }
 
           echo "TOOLS=$TOOLS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
@@ -45,8 +99,19 @@ jobs:
         with:
           tools: ${{ env.TOOLS }}
 
-      # Upload alerts to the Security tab
+      # Check if the repository is private and display a message
+      - name: Check Repository Visibility
+        shell: bash
+        run: |
+          if [ "${{ github.repository_visibility }}" == "private" ]; then
+            echo "This is a private repository. Code Scanning is not available unless GitHub Advanced Security (GHAS) is enabled."
+            echo "For private repositories, consider enabling GHAS or using external security tools like SonarQube or Snyk."
+            exit 0
+          fi
+
+      # Upload alerts to the Security tab (only if the repo is public)
       - name: Upload alerts to Security tab
+        if: github.repository_visibility == 'public'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.msdo.outputs.sarifFile }}
