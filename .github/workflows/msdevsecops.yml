@@ -20,22 +20,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Determine which tools should be enabled based on file presence
+      # Determine which tools should be enabled based on file presence (Windows PowerShell compatible)
       - name: Set environment variables for tools
+        shell: pwsh
         run: |
-          TOOLS="bandit,checkov,templateanalyzer,terrascan,trivy"
+          $TOOLS = "bandit,checkov,templateanalyzer,terrascan,trivy"
 
           # Check for JS/TS files before enabling ESLint
-          if git ls-files | grep -E '\.(js|ts)$' > /dev/null; then
-            TOOLS="$TOOLS,eslint"
-          fi
+          if ((Get-ChildItem -Recurse -Include *.js, *.ts | Measure-Object).Count -gt 0) {
+            $TOOLS += ",eslint"
+          }
 
           # Check for EXE/DLL files before enabling BinSkim
-          if git ls-files | grep -E '\.(exe|dll)$' > /dev/null; then
-            TOOLS="$TOOLS,binskim"
-          fi
+          if ((Get-ChildItem -Recurse -Include *.exe, *.dll | Measure-Object).Count -gt 0) {
+            $TOOLS += ",binskim"
+          }
 
-          echo "TOOLS=$TOOLS" >> $GITHUB_ENV
+          echo "TOOLS=$TOOLS" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       # Run analyzers only with available tools
       - name: Run Microsoft Security DevOps
