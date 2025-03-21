@@ -27,11 +27,11 @@ jobs:
           $TOOLS = ""
 
           # Enable ESLint if JS/TS files exist
-          if ((Get-ChildItem -Recurse -Include *.js, *.ts | Measure-Object).Count -gt 0) {
+          if ((Get-ChildItem -Recurse -Include *.js, *.jsx, *.ts, *.tsx  | Measure-Object).Count -gt 0) {
             $TOOLS += "eslint,"
-            echo "ESLint enabled - JS/TS files detected."
+            echo "ESLint enabled - JS/JSX/TS/TSX files detected."
           } else {
-            echo "ESLint skipped - No JS/TS files found."
+            echo "ESLint skipped - No JS/JSX/TS/TSX files found."
           }
 
           # Enable BinSkim if EXE/DLL files exist
@@ -51,11 +51,11 @@ jobs:
           }
 
           # Enable Checkov if Terraform files exist
-          if ((Get-ChildItem -Recurse -Include *.tf | Measure-Object).Count -gt 0) {
+          if ((Get-ChildItem -Recurse -Include *.tf, *.json, *.yml, *.yaml, *.dockerfile, *.template, *.bicep | Measure-Object).Count -gt 0) {
             $TOOLS += "checkov,"
-            echo "Checkov enabled - Terraform files detected."
+            echo "Checkov enabled - Terraform/JSON/YML/YAML/Dockerfiles/Templates/Bicep files detected."
           } else {
-            echo "Checkov skipped - No Terraform files found."
+            echo "Checkov skipped - No Terraform/JSON/YML/YAML/Dockerfiles/Templates/Bicep files found."
           }
 
           # Enable Template Analyzer if ARM templates exist
@@ -75,11 +75,11 @@ jobs:
           }
 
           # Enable Terrascan if Terraform files exist
-          if ((Get-ChildItem -Recurse -Include *.tf | Measure-Object).Count -gt 0) {
+          if ((Get-ChildItem -Recurse -Include *.tf, *.json, *.yml, *.yaml | Measure-Object).Count -gt 0) {
             $TOOLS += "terrascan,"
-            echo "Terrascan enabled - Terraform files detected."
+            echo "Terrascan enabled - Terraform/JSON/YML/YAML files detected."
           } else {
-            echo "Terrascan skipped - No Terraform files found."
+            echo "Terrascan skipped - No Terraform/JSON/YML/YAML files found."
           }
 
           # Enable Trivy if Dockerfiles exist
@@ -89,6 +89,7 @@ jobs:
           } else {
             echo "Trivy skipped - No Dockerfiles found."
           }
+          #trivy rootfs --input $(docker export <container_id>) - can be included for scanning Containers, but requires Docker CLI access and elevated perms
 
           # Remove trailing comma if no tools found
           $TOOLS = $TOOLS.TrimEnd(',')
