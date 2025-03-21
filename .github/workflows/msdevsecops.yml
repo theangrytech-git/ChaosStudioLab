@@ -66,6 +66,14 @@ jobs:
             echo "Template Analyzer skipped - No ARM templates found."
           }
 
+          # Enable Template Analyzer if Bicep files exist
+          if ((Get-ChildItem -Recurse -Include *.bicep | Measure-Object).Count -gt 0) {
+            $TOOLS += "templateanalyzer,"
+            echo "Template Analyzer enabled - Bicep files detected."
+          } else {
+            echo "Template Analyzer skipped - No Bicep files found."
+          }
+
           # Enable Terrascan if Terraform files exist
           if ((Get-ChildItem -Recurse -Include *.tf | Measure-Object).Count -gt 0) {
             $TOOLS += "terrascan,"
