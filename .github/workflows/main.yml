@@ -1,0 +1,21 @@
+name: MSDO Main Scan
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+  security-events: write
+
+jobs:
+  run-msdo-scan:
+    name: Full MSDO Scan
+    uses: theangrytech-git/azure-vm-nsg-alerts/.github/workflows/test_main.yml@main 
+    with:
+      branch: ${{ github.ref_name }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
