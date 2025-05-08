@@ -63,6 +63,14 @@ stages:
               sudo mv terraform /usr/local/bin/
               terraform --version
             displayName: 'Install Terraform'
+            
+          - script: |
+              terraform init \
+                -backend-config="resource_group_name=$(tfStateRG)" \
+                -backend-config="storage_account_name=$(tfStateStorage)" \
+                -backend-config="container_name=$(tfStateContainer)" \
+                -backend-config="key=$(tfStateKey)"
+            displayName: 'Terraform Init with Backend'
 
           - script: |
               terraform validate
@@ -92,6 +100,14 @@ stages:
               sudo mv terraform /usr/local/bin/
               terraform --version
             displayName: 'Install Terraform'
+
+          - script: |
+              terraform init \
+                -backend-config="resource_group_name=$(tfStateRG)" \
+                -backend-config="storage_account_name=$(tfStateStorage)" \
+                -backend-config="container_name=$(tfStateContainer)" \
+                -backend-config="key=$(tfStateKey)"
+            displayName: 'Terraform Init with Backend'
 
           - download: current
             artifact: terraformPlan
