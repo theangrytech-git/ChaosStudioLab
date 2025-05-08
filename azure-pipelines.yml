@@ -22,6 +22,7 @@ stages:
         displayName: 'Init Job'
         steps:
           - checkout: self
+            persistCredentials: true
 
           - task: AzureCLI@2
             inputs:
@@ -56,6 +57,8 @@ stages:
         displayName: 'Plan Job'
         steps:
           - checkout: self
+            persistCredentials: true
+
           - script: |
               echo "Installing Terraform $(terraformVersion)..."
               wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
@@ -92,6 +95,7 @@ stages:
         displayName: 'Apply Job'
         steps:
           - checkout: self
+            persistCredentials: true
           
           - script: |
               echo "Installing Terraform $(terraformVersion)..."
