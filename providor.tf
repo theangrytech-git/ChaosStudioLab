@@ -23,7 +23,6 @@ provider "azurerm" {
 
   use_cli          = true
   use_msi          = false
-  use_azuread_auth = false
 }
 
 provider "random" {
