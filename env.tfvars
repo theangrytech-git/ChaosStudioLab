@@ -15,4 +15,4 @@ uksaccounttier = "Standard"
 uksart = "LRS"
 uks-asp-os = "Linux"
 uks-asp-sku = "B1"
-days_to_expire = 7
+days_to_expire = "7"
