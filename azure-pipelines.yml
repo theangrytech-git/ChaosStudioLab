@@ -58,6 +58,15 @@ stages:
         steps:
           - checkout: self
             persistCredentials: true
+            
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Logging into Azure via Azure CLI"
+                az account show
 
           - script: |
               echo "Installing Terraform $(terraformVersion)..."
@@ -97,6 +106,15 @@ stages:
           - checkout: self
             persistCredentials: true
           
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Logging into Azure via Azure CLI"
+                az account show
+
           - script: |
               echo "Installing Terraform $(terraformVersion)..."
               wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
