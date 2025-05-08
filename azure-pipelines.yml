@@ -56,6 +56,13 @@ stages:
         displayName: 'Plan Job'
         steps:
           - checkout: self
+          - script: |
+              echo "Installing Terraform $(terraformVersion)..."
+              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+              unzip terraform_$(terraformVersion)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform --version
+            displayName: 'Install Terraform'
 
           - script: |
               terraform validate
@@ -77,6 +84,14 @@ stages:
         displayName: 'Apply Job'
         steps:
           - checkout: self
+          
+          - script: |
+              echo "Installing Terraform $(terraformVersion)..."
+              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+              unzip terraform_$(terraformVersion)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform --version
+            displayName: 'Install Terraform'
 
           - download: current
             artifact: terraformPlan
