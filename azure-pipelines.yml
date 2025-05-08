@@ -80,7 +80,7 @@ stages:
             displayName: 'Terraform Validate'
 
           - script: |
-              terraform plan -out=tfplan
+              terraform plan -var-file="env.tfvars" -out=tfplan
             displayName: 'Terraform Plan'
 
           - publish: tfplan
@@ -117,5 +117,5 @@ stages:
             artifact: terraformPlan
 
           - script: |
-              terraform apply -auto-approve tfplan
+              terraform plan -var-file="env.tfvars" -out=tfplan
             displayName: 'Terraform Apply'
