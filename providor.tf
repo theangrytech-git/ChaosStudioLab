@@ -12,7 +12,6 @@ terraform {
 }
 # Configuration options
 provider "azurerm" {
-  subscription_id = "b055686f-a26e-43f3-971e-f03a89a7979f" #Remove ID for other users to add theirs.
   features {
     key_vault {
       purge_soft_delete_on_destroy = true
