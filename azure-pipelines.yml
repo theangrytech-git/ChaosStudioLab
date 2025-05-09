@@ -72,24 +72,15 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 echo "Authenticating with Azure CLI"
-      
-                # Confirm login was successful
-                az account show
 
-                # Explicitly set the subscription so Terraform can use it
-                az account set --subscription b055686f-a26e-43f3-971e-f03a89a7979f
-
-                # Show current context
-                az account show
-
-                # Terraform operations
                 terraform init \
                   -backend-config="resource_group_name=$(tfStateRG)" \
                   -backend-config="storage_account_name=$(tfStateStorage)" \
                   -backend-config="container_name=$(tfStateContainer)" \
                   -backend-config="key=$(tfStateKey)"
 
-                terraform plan -var-file="env.tfvars" -out=tfplan
+                terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
+
 
           - publish: tfplan
             artifact: terraformPlan
@@ -130,4 +121,4 @@ stages:
                   -backend-config="container_name=$(tfStateContainer)" \
                   -backend-config="key=$(tfStateKey)"
 
-                terraform apply -var-file="env.tfvars" -auto-approve tfplan
+                terraform apply -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -auto-approve tfplan
