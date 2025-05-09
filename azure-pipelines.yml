@@ -128,4 +128,4 @@ stages:
                     echo "Moving tfplan to working directory"
                     mv terraformPlan/tfplan tfplan
 
-                    terraform apply -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -auto-approve tfplan
+                    terraform apply -auto-approve tfplan
