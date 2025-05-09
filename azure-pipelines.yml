@@ -81,7 +81,6 @@ stages:
 
                 terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
 
-
           - publish: tfplan
             artifact: terraformPlan
 
