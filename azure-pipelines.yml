@@ -105,8 +105,11 @@ stages:
                   terraform --version
                 displayName: 'Install Terraform'
 
-              - download: current
-                artifact: terraformPlan
+              - task: DownloadPipelineArtifact@2
+                displayName: 'Download tfplan artifact'
+                inputs:
+                  artifact: terraformPlan
+                  path: terraformPlan
 
               - task: AzureCLI@2
                 inputs:
