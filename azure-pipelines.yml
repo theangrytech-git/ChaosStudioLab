@@ -1,3 +1,8 @@
+parameters:
+  - name: runApply
+    type: boolean
+    default: false
+
 trigger:
   branches:
     include:
@@ -86,8 +91,7 @@ stages:
 
   - stage: Apply
     displayName: 'Terraform Apply'
-    dependsOn: Plan
-    condition: succeeded()
+    condition: eq('${{ parameters.runApply }}', true)
     jobs:
       - job: ApplyJob
         displayName: 'Apply Job'
@@ -119,5 +123,8 @@ stages:
                   -backend-config="storage_account_name=$(tfStateStorage)" \
                   -backend-config="container_name=$(tfStateContainer)" \
                   -backend-config="key=$(tfStateKey)"
+                  
+                  echo "Moving downloaded tfplan to working directory"
+                  mv terraformPlan/tfplan tfplan
 
                 terraform apply -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -auto-approve tfplan
