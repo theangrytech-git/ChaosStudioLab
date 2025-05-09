@@ -1,3 +1,7 @@
+variable "subscription_id" {
+  type = string
+}
+
 variable "environment_tag" {
   type        = string
   description = "Environment tag value"
