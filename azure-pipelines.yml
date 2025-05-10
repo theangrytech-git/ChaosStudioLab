@@ -61,6 +61,7 @@ stages:
               -backend-config="storage_account_name=$(tfStateStorage)" \
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
+              -var="agent_ip=$(agent_ip)"
           displayName: 'Terraform Init with SP Auth'
 
         - task: AzureCLI@2
