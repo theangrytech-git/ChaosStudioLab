@@ -33,47 +33,31 @@ stages:
           displayName: 'Install Terraform'
 
         - task: AzureCLI@2
-          displayName: 'Add DevOps Agent IP to Key Vault & Storage'
+          displayName: 'Temporarily Allow All Networks on Storage Account'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Temporarily allowing all networks for storage account access"
+              az storage account update \
+                --resource-group $(tfStateRG) \
+                --name $(tfStateStorage) \
+                --default-action Allow
+
+        - task: AzureCLI@2
+          displayName: 'Add DevOps Agent IP to Key Vault'
           inputs:
             azureSubscription: $(azureSubscription)
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
               agentIP=$(curl -s https://checkip.amazonaws.com)
-              echo "Adding IP: $agentIP to Key Vault and Storage Account"
-
+              echo "Adding IP: $agentIP to Key Vault"
               az keyvault network-rule add \
                 --name kv-uks-lab12345 \
                 --resource-group chaos-lab-rg \
                 --ip-address $agentIP
-
-              az storage account network-rule add \
-                --resource-group $(tfStateRG) \
-                --account-name $(tfStateStorage) \
-                --ip-address $agentIP
-
-        - task: AzureCLI@2
-          displayName: 'Validate Storage Account Access'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Validating access to Storage Account..."
-              accountKey=$(az storage account keys list \
-              --resource-group $(tfStateRG) \
-              --account-name $(tfStateStorage) \
-              --query '[0].value' -o tsv)
-
-              az storage blob list \
-              --container-name $(tfStateContainer) \
-              --account-name $(tfStateStorage) \
-              --account-key $accountKey \
-              --auth-mode key \
-              --output table || {
-              echo "ERROR: Access to the storage account is not available. Check IP/network rules."
-              exit 1
-              }
 
         - script: |
             echo "Terraform Init using Service Principal"
@@ -90,7 +74,21 @@ stages:
           displayName: 'Terraform Init with SP Auth'
 
         - task: AzureCLI@2
-          displayName: 'Remove DevOps Agent IP from Key Vault & Storage'
+          displayName: 'Re-enable Storage Network Rules'
+          condition: always()
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Restoring storage account to selected networks only"
+              az storage account update \
+                --resource-group $(tfStateRG) \
+                --name $(tfStateStorage) \
+                --default-action Deny
+
+        - task: AzureCLI@2
+          displayName: 'Remove DevOps Agent IP from Key Vault'
           condition: always()
           inputs:
             azureSubscription: $(azureSubscription)
@@ -98,16 +96,10 @@ stages:
             scriptLocation: inlineScript
             inlineScript: |
               agentIP=$(curl -s https://checkip.amazonaws.com)
-              echo "Removing IP: $agentIP from Key Vault and Storage Account"
-
+              echo "Removing IP: $agentIP from Key Vault"
               az keyvault network-rule remove \
                 --name kv-uks-lab12345 \
                 --resource-group chaos-lab-rg \
-                --ip-address $agentIP
-
-              az storage account network-rule remove \
-                --resource-group $(tfStateRG) \
-                --account-name $(tfStateStorage) \
                 --ip-address $agentIP
 
 - stage: Plan
@@ -137,6 +129,7 @@ stages:
             inlineScript: |
               agentIP=$(curl -s https://checkip.amazonaws.com)
               echo "Adding IP: $agentIP to Key Vault and Storage Account"
+
               az keyvault network-rule add \
                 --name kv-uks-lab12345 \
                 --resource-group chaos-lab-rg \
@@ -146,6 +139,7 @@ stages:
                 --resource-group $(tfStateRG) \
                 --account-name $(tfStateStorage) \
                 --ip-address $agentIP
+
         - task: AzureCLI@2
           displayName: 'Validate Storage Account Access'
           inputs:
@@ -154,20 +148,10 @@ stages:
             scriptLocation: inlineScript
             inlineScript: |
               echo "Validating access to Storage Account..."
-              accountKey=$(az storage account keys list \
-              --resource-group $(tfStateRG) \
-              --account-name $(tfStateStorage) \
-              --query '[0].value' -o tsv)
-
-              az storage blob list \
-              --container-name $(tfStateContainer) \
-              --account-name $(tfStateStorage) \
-              --account-key $accountKey \
-              --auth-mode key \
-              --output table || {
-              echo "ERROR: Access to the storage account is not available. Check IP/network rules."
-              exit 1
-              }
+              az storage container list \
+                --account-name $(tfStateStorage) \
+                --auth-mode login \
+                --only-show-errors
 
         - script: |
             echo "Terraform Plan using Service Principal"
@@ -182,7 +166,10 @@ stages:
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
 
-            terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
+            terraform plan \
+              -var="subscription_id=$(subscriptionId)" \
+              -var-file="env.tfvars" \
+              -out=tfplan
           displayName: 'Terraform Plan with SP Auth'
 
         - publish: tfplan
@@ -198,6 +185,7 @@ stages:
             inlineScript: |
               agentIP=$(curl -s https://checkip.amazonaws.com)
               echo "Removing IP: $agentIP from Key Vault and Storage Account"
+
               az keyvault network-rule remove \
                 --name kv-uks-lab12345 \
                 --resource-group chaos-lab-rg \
@@ -248,6 +236,19 @@ stages:
                       --resource-group $(tfStateRG) \
                       --account-name $(tfStateStorage) \
                       --ip-address $agentIP
+
+              - task: AzureCLI@2
+                displayName: 'Validate Storage Account Access'
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    echo "Validating access to Storage Account..."
+                    az storage container list \
+                      --account-name $(tfStateStorage) \
+                      --auth-mode login \
+                      --only-show-errors
 
               - task: DownloadPipelineArtifact@2
                 displayName: 'Download tfplan artifact'
