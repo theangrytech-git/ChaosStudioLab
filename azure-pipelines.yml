@@ -27,6 +27,29 @@ stages:
             terraform --version
           displayName: 'Install Terraform'
 
+        - script: |
+            echo "Removing old Azure CLI..."
+            sudo apt-get remove -y azure-cli
+
+            echo "Installing dependencies..."
+            sudo apt-get update
+            sudo apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg
+
+            echo "Adding Microsoft package signing key..."
+            curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+
+            echo "Adding Azure CLI repository..."
+            AZ_REPO=$(lsb_release -cs)
+            echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+
+            echo "Installing latest Azure CLI..."
+            sudo apt-get update
+            sudo apt-get install -y azure-cli
+
+            echo "Azure CLI version after upgrade:"
+            az --version
+          displayName: 'Install Latest Azure CLI'
+
         - task: AzureCLI@2
           displayName: 'Temporarily Open Storage Account for Init'
           inputs:
