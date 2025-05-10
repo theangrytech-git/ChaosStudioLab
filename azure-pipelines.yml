@@ -13,6 +13,10 @@ variables:
   tfStateStorage: 'chaosstatestorage'
   tfStateContainer: 'tfstate'
   tfStateKey: 'chaosstudio.tfstate'
+  servicePrincipalId: $(servicePrincipalId)
+  servicePrincipalKey: $(servicePrincipalKey)
+  tenantId: $(tenantId)
+  subscriptionId: $(subscriptionId)
 
 stages:
   - stage: Init
@@ -21,37 +25,30 @@ stages:
       - job: InitJob
         displayName: 'Init Job'
         steps:
-        - checkout: self
-          persistCredentials: true
+          - checkout: self
+            persistCredentials: true
 
-        - script: |
-            echo "Installing Terraform $(terraformVersion)..."
-            wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-            unzip terraform_$(terraformVersion)_linux_amd64.zip
-            sudo mv terraform /usr/local/bin/
-            terraform --version
-          displayName: 'Install Terraform'
+          - script: |
+              echo "Installing Terraform $(terraformVersion)..."
+              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+              unzip terraform_$(terraformVersion)_linux_amd64.zip
+              sudo mv terraform /usr/local/bin/
+              terraform --version
+            displayName: 'Install Terraform'
 
-        - task: AzureCLI@2
-          displayName: 'Terraform Init with SP Auth'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Logging into Azure using SP and running terraform init..."
-
-              # Export required Terraform environment variables
-              export ARM_CLIENT_ID=$servicePrincipalId
-              export ARM_CLIENT_SECRET=$servicePrincipalKey
-              export ARM_TENANT_ID=$tenantId
-              export ARM_SUBSCRIPTION_ID=$subscriptionId
+          - script: |
+              echo "Terraform Init using Service Principal"
+              export ARM_CLIENT_ID=$(servicePrincipalId)
+              export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+              export ARM_TENANT_ID=$(tenantId)
+              export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
               terraform init \
-              -backend-config="resource_group_name=$(tfStateRG)" \
-              -backend-config="storage_account_name=$(tfStateStorage)" \
-              -backend-config="container_name=$(tfStateContainer)" \
-              -backend-config="key=$(tfStateKey)"
+                -backend-config="resource_group_name=$(tfStateRG)" \
+                -backend-config="storage_account_name=$(tfStateStorage)" \
+                -backend-config="container_name=$(tfStateContainer)" \
+                -backend-config="key=$(tfStateKey)"
+            displayName: 'Terraform Init with SP Auth'
 
   - stage: Plan
     displayName: 'Terraform Plan'
@@ -119,33 +116,30 @@ stages:
                   --resource-group chaos-lab-rg \
                   --ip-address $agentIP
 
-          - publish: tfplan
-            artifact: terraformPlan
-
   - stage: Apply
     displayName: 'Terraform Apply'
     jobs:
-    - deployment: ApplyJob
-      displayName: 'Terraform Apply with Approval'
-      environment: ChaosStudioEnv
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - checkout: self
-                persistCredentials: true
+      - deployment: ApplyJob
+        displayName: 'Terraform Apply with Approval'
+        environment: ChaosStudioEnv
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  persistCredentials: true
 
-              - script: |
-                  echo "Installing Terraform $(terraformVersion)..."
-                  wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-                  unzip terraform_$(terraformVersion)_linux_amd64.zip
-                  sudo mv terraform /usr/local/bin/
-                  terraform --version
-                displayName: 'Install Terraform'
+                - script: |
+                    echo "Installing Terraform $(terraformVersion)..."
+                    wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+                    unzip terraform_$(terraformVersion)_linux_amd64.zip
+                    sudo mv terraform /usr/local/bin/
+                    terraform --version
+                  displayName: 'Install Terraform'
 
-              - task: AzureCLI@2
-                displayName: 'Add DevOps Agent IP to Key Vault'
-                inputs:
+                - task: AzureCLI@2
+                  displayName: 'Add DevOps Agent IP to Key Vault'
+                  inputs:
                     azureSubscription: $(azureSubscription)
                     scriptType: bash
                     scriptLocation: inlineScript
@@ -157,35 +151,35 @@ stages:
                         --resource-group chaos-lab-rg \
                         --ip-address $agentIP
 
-              - task: DownloadPipelineArtifact@2
-                displayName: 'Download tfplan artifact'
-                inputs:
-                  artifact: terraformPlan
-                  path: terraformPlan
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download tfplan artifact'
+                  inputs:
+                    artifact: terraformPlan
+                    path: terraformPlan
 
-              - task: AzureCLI@2
-                inputs:
-                  azureSubscription: $(azureSubscription)
-                  scriptType: bash
-                  scriptLocation: inlineScript
-                  inlineScript: |
-                    echo "Terraform Apply with Azure CLI context"
+                - task: AzureCLI@2
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      echo "Terraform Apply with Azure CLI context"
 
-                    terraform init \
-                      -backend-config="resource_group_name=$(tfStateRG)" \
-                      -backend-config="storage_account_name=$(tfStateStorage)" \
-                      -backend-config="container_name=$(tfStateContainer)" \
-                      -backend-config="key=$(tfStateKey)"
+                      terraform init \
+                        -backend-config="resource_group_name=$(tfStateRG)" \
+                        -backend-config="storage_account_name=$(tfStateStorage)" \
+                        -backend-config="container_name=$(tfStateContainer)" \
+                        -backend-config="key=$(tfStateKey)"
 
-                    echo "Moving tfplan to working directory"
-                    mv terraformPlan/tfplan tfplan
+                      echo "Moving tfplan to working directory"
+                      mv terraformPlan/tfplan tfplan
 
-                    terraform apply -auto-approve tfplan
+                      terraform apply -auto-approve tfplan
 
-              - task: AzureCLI@2
-                displayName: 'Remove DevOps Agent IP from Key Vault'
-                condition: always()
-                inputs:
+                - task: AzureCLI@2
+                  displayName: 'Remove DevOps Agent IP from Key Vault'
+                  condition: always()
+                  inputs:
                     azureSubscription: $(azureSubscription)
                     scriptType: bash
                     scriptLocation: inlineScript
