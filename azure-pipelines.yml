@@ -55,13 +55,15 @@ stages:
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_TENANT_ID=$(tenantId)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+            
+            echo "Sleeping 10 seconds to allow firewall rules to propagate..."
+            sleep 10
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
               -backend-config="storage_account_name=$(tfStateStorage)" \
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
-              -var="agent_ip=$(agent_ip)"
           displayName: 'Terraform Init with SP Auth'
 
         - task: AzureCLI@2
