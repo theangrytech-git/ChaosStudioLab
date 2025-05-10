@@ -584,6 +584,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
     Environment = var.environment_tag
     Health      = var.health_tag
   }
+depends_on = [azurerm_key_vault_secret.vmpassword1]
 }
 
 /*******************************************************************************
@@ -630,6 +631,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   identity {
     type = "SystemAssigned"
   }
+depends_on = [azurerm_key_vault_secret.vmpassword1]
 }
 
 resource "azurerm_windows_virtual_machine" "uks-vmsb" {
@@ -669,6 +671,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   identity {
     type = "SystemAssigned"
   }
+depends_on = [azurerm_key_vault_secret.vmpassword2]
 }
 
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
