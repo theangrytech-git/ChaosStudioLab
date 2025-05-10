@@ -155,15 +155,9 @@ stages:
 
               echo "Adding agent IP to Storage Account firewall..."
               az storage account network-rule add \
-                --resource-group $(tfStateRG) \
-                --account-name $(tfStateStorage) \
+                --resource-group ${{ variables.tfStateRG }} \
+                --account-name ${{ variables.tfStateStorage }} \
                 --ip-address $AGENT_IP
-
-              # Optional Key Vault rule (uncomment if needed)
-              # echo "Adding agent IP to Key Vault firewall..."
-              # az keyvault network-rule add \
-              #   --name $(keyVaultName) \
-              #   --ip-address $AGENT_IP
 
         - script: |
             echo "Terraform Plan using Service Principal"
@@ -173,7 +167,7 @@ stages:
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
             echo "Waiting for firewall rule propagation..."
-            sleep 10
+            sleep 20
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
@@ -200,15 +194,10 @@ stages:
             inlineScript: |
               echo "Removing agent IP from Storage Account..."
               az storage account network-rule remove \
-                --resource-group $(tfStateRG) \
-                --account-name $(tfStateStorage) \
+                --resource-group ${{ variables.tfStateRG }} \
+                --account-name ${{ variables.tfStateStorage }} \
                 --ip-address $(agent_ip)
 
-              # Optional Key Vault cleanup (uncomment if added above)
-              # echo "Removing agent IP from Key Vault..."
-              # az keyvault network-rule remove \
-              #   --name $(keyVaultName) \
-              #   --ip-address $(agent_ip)
 
 - stage: Apply
   displayName: 'Terraform Apply'
