@@ -28,3 +28,7 @@ provider "azurerm" {
 provider "random" {
   # Configuration options
 }
+
+terraform {
+  backend "azurerm" {}
+}
