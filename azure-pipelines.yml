@@ -28,26 +28,17 @@ stages:
           displayName: 'Install Terraform'
 
         - task: AzureCLI@2
-          displayName: 'Temporarily Open Storage & Add Agent IP to Key Vault'
+          displayName: 'Temporarily Open Storage Account for Init'
           inputs:
             azureSubscription: $(azureSubscription)
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
-              agentIP=$(curl -s https://checkip.amazonaws.com)
-              echo "Detected Agent IP: $agentIP"
-
-              echo "Temporarily setting Storage Account to Allow All"
+              echo "Temporarily allowing public access to Storage Account"
               az storage account update \
                 --name $(tfStateStorage) \
                 --resource-group $(tfStateRG) \
                 --default-action Allow
-
-              echo "Adding agent IP to Key Vault"
-              az keyvault network-rule add \
-                --name kv-uks-lab12345 \
-                --resource-group chaos-lab-rg \
-                --ip-address $agentIP
 
         - script: |
             echo "Terraform Init using Service Principal"
@@ -64,27 +55,19 @@ stages:
           displayName: 'Terraform Init with SP Auth'
 
         - task: AzureCLI@2
-          displayName: 'Revert Storage & Remove Agent IP from Key Vault'
+          displayName: 'Revert Storage Account to Selected Networks'
           condition: always()
           inputs:
             azureSubscription: $(azureSubscription)
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
-              agentIP=$(curl -s https://checkip.amazonaws.com)
-              echo "Removing agent IP: $agentIP from Key Vault"
-
-              az keyvault network-rule remove \
-                --name kv-uks-lab12345 \
-                --resource-group chaos-lab-rg \
-                --ip-address $agentIP
-
-              echo "Setting Storage Account back to Selected Networks"
+              echo "Reverting Storage Account to Selected Networks"
               az storage account update \
                 --name $(tfStateStorage) \
                 --resource-group $(tfStateRG) \
                 --default-action Deny
-                
+
 - stage: Plan
   displayName: 'Terraform Plan'
   dependsOn: Init
@@ -103,26 +86,18 @@ stages:
             terraform --version
           displayName: 'Install Terraform'
 
-        - script: |
-            agentIP=$(curl -s https://checkip.amazonaws.com)
-            echo "Checking for Key Vault and Storage Account to allow IP: $agentIP"
-
-            if az keyvault show --name kv-uks-lab12345 --resource-group chaos-lab-rg &> /dev/null; then
-              echo "Adding IP to Key Vault..."
-              az keyvault network-rule add --name kv-uks-lab12345 --resource-group chaos-lab-rg --ip-address $agentIP
-            else
-              echo "Key Vault not found. Skipping."
-            fi
-
-            if az storage account show --name $(tfStateStorage) --resource-group $(tfStateRG) &> /dev/null; then
-              echo "Adding IP to Storage Account..."
-              az storage account network-rule add --resource-group $(tfStateRG) --account-name $(tfStateStorage) --ip-address $agentIP
-            else
-              echo "Storage Account not found. Skipping."
-            fi
-          displayName: 'Conditionally Add DevOps Agent IP to Key Vault & Storage'
-          env:
-            AZURE_DEVOPS_EXT_AZURE_RM_SERVICE_PRINCIPAL_KEY: $(servicePrincipalKey)
+        - task: AzureCLI@2
+          displayName: 'Temporarily Open Storage Account for Plan'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Temporarily allowing public access to Storage Account"
+              az storage account update \
+                --name $(tfStateStorage) \
+                --resource-group $(tfStateRG) \
+                --default-action Allow
 
         - script: |
             echo "Terraform Plan using Service Principal"
@@ -142,6 +117,20 @@ stages:
 
         - publish: tfplan
           artifact: terraformPlan
+
+        - task: AzureCLI@2
+          displayName: 'Revert Storage Account to Selected Networks'
+          condition: always()
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Reverting Storage Account to Selected Networks"
+              az storage account update \
+                --name $(tfStateStorage) \
+                --resource-group $(tfStateRG) \
+                --default-action Deny
 
 - stage: Apply
   displayName: 'Terraform Apply'
@@ -165,24 +154,19 @@ stages:
                   terraform --version
                 displayName: 'Install Terraform'
 
-              - script: |
-                  agentIP=$(curl -s https://checkip.amazonaws.com)
-                  echo "Checking for Key Vault and Storage Account to allow IP: $agentIP"
-
-                  if az keyvault show --name kv-uks-lab12345 --resource-group chaos-lab-rg &> /dev/null; then
-                    echo "Adding IP to Key Vault..."
-                    az keyvault network-rule add --name kv-uks-lab12345 --resource-group chaos-lab-rg --ip-address $agentIP
-                  else
-                    echo "Key Vault not found. Skipping."
-                  fi
-
-                  if az storage account show --name $(tfStateStorage) --resource-group $(tfStateRG) &> /dev/null; then
-                    echo "Adding IP to Storage Account..."
-                    az storage account network-rule add --resource-group $(tfStateRG) --account-name $(tfStateStorage) --ip-address $agentIP
-                  else
-                    echo "Storage Account not found. Skipping."
-                  fi
-                displayName: 'Conditionally Add DevOps Agent IP to Key Vault & Storage'
+              - task: AzureCLI@2
+                displayName: 'Add DevOps Agent IP to Storage Account (temporarily)'
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    agentIP=$(curl -s https://checkip.amazonaws.com)
+                    echo "Temporarily allowing IP: $agentIP on storage account"
+                    az storage account network-rule add \
+                      --resource-group $(tfStateRG) \
+                      --account-name $(tfStateStorage) \
+                      --ip-address $agentIP
 
               - task: DownloadPipelineArtifact@2
                 displayName: 'Download tfplan artifact'
@@ -197,6 +181,8 @@ stages:
                   export ARM_TENANT_ID=$(tenantId)
                   export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
+                  agentIP=$(curl -s https://checkip.amazonaws.com)
+
                   terraform init \
                     -backend-config="resource_group_name=$(tfStateRG)" \
                     -backend-config="storage_account_name=$(tfStateStorage)" \
@@ -206,19 +192,20 @@ stages:
                   echo "Moving tfplan to working directory"
                   mv terraformPlan/tfplan tfplan
 
-                  terraform apply -auto-approve tfplan
-                displayName: 'Terraform Apply with SP Auth'
+                  terraform apply -auto-approve -var="agent_ip=$agentIP"
+                displayName: 'Terraform Apply with SP Auth & Agent IP'
 
-              - script: |
-                  agentIP=$(curl -s https://checkip.amazonaws.com)
-                  echo "Removing IP: $agentIP from Key Vault and Storage Account"
-
-                  if az keyvault show --name kv-uks-lab12345 --resource-group chaos-lab-rg &> /dev/null; then
-                    az keyvault network-rule remove --name kv-uks-lab12345 --resource-group chaos-lab-rg --ip-address $agentIP
-                  fi
-
-                  if az storage account show --name $(tfStateStorage) --resource-group $(tfStateRG) &> /dev/null; then
-                    az storage account network-rule remove --resource-group $(tfStateRG) --account-name $(tfStateStorage) --ip-address $agentIP
-                  fi
-                displayName: 'Remove DevOps Agent IP from Key Vault & Storage'
+              - task: AzureCLI@2
+                displayName: 'Remove DevOps Agent IP from Storage Account'
                 condition: always()
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    agentIP=$(curl -s https://checkip.amazonaws.com)
+                    echo "Removing IP: $agentIP from Storage Account"
+                    az storage account network-rule remove \
+                      --resource-group $(tfStateRG) \
+                      --account-name $(tfStateStorage) \
+                      --ip-address $agentIP
