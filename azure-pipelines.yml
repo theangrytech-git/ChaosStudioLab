@@ -15,174 +15,236 @@ variables:
   tfStateKey: 'chaosstudio.tfstate'
 
 stages:
-  - stage: Init
-    displayName: 'Terraform Init'
-    jobs:
-      - job: InitJob
-        displayName: 'Init Job'
-        steps:
-          - checkout: self
-            persistCredentials: true
+- stage: Init
+  displayName: 'Terraform Init'
+  jobs:
+    - job: InitJob
+      displayName: 'Init Job'
+      steps:
+        - checkout: self
+          persistCredentials: true
 
-          - script: |
-              echo "Installing Terraform $(terraformVersion)..."
-              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-              unzip terraform_$(terraformVersion)_linux_amd64.zip
-              sudo mv terraform /usr/local/bin/
-              terraform --version
-            displayName: 'Install Terraform'
+        - script: |
+            echo "Installing Terraform $(terraformVersion)..."
+            wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+            unzip terraform_$(terraformVersion)_linux_amd64.zip
+            sudo mv terraform /usr/local/bin/
+            terraform --version
+          displayName: 'Install Terraform'
 
-          - script: |
-              echo "Terraform Init using Service Principal"
-              export ARM_CLIENT_ID="$(servicePrincipalId)"
-              export ARM_CLIENT_SECRET="$(servicePrincipalKey)"
-              export ARM_TENANT_ID="$(tenantId)"
-              export ARM_SUBSCRIPTION_ID="$(subscriptionId)"
+        - task: AzureCLI@2
+          displayName: 'Add DevOps Agent IP to Key Vault & Storage'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              agentIP=$(curl -s https://checkip.amazonaws.com)
+              echo "Adding IP: $agentIP to Key Vault and Storage Account"
 
-              terraform init \
-                -backend-config="resource_group_name=$(tfStateRG)" \
-                -backend-config="storage_account_name=$(tfStateStorage)" \
-                -backend-config="container_name=$(tfStateContainer)" \
-                -backend-config="key=$(tfStateKey)"
-            displayName: 'Terraform Init with SP Auth'
+              az keyvault network-rule add \
+                --name kv-uks-lab12345 \
+                --resource-group chaos-lab-rg \
+                --ip-address $agentIP
 
-  - stage: Plan
-    displayName: 'Terraform Plan'
-    dependsOn: Init
-    jobs:
-      - job: PlanJob
-        displayName: 'Plan Job'
-        steps:
-          - checkout: self
-            persistCredentials: true
+              az storage account network-rule add \
+                --resource-group $(tfStateRG) \
+                --account-name $(tfStateStorage) \
+                --ip-address $agentIP
 
-          - script: |
-              echo "Installing Terraform $(terraformVersion)..."
-              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-              unzip terraform_$(terraformVersion)_linux_amd64.zip
-              sudo mv terraform /usr/local/bin/
-              terraform --version
-            displayName: 'Install Terraform'
+        - script: |
+            echo "Terraform Init using Service Principal"
+            export ARM_CLIENT_ID=$(servicePrincipalId)
+            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+            export ARM_TENANT_ID=$(tenantId)
+            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
-          - task: AzureCLI@2
-            displayName: 'Add DevOps Agent IP to Key Vault'
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                agentIP=$(curl -s https://checkip.amazonaws.com)
-                echo "Adding IP: $agentIP to Key Vault"
-                az keyvault network-rule add \
-                  --name kv-uks-lab12345 \
-                  --resource-group chaos-lab-rg \
-                  --ip-address $agentIP
+            terraform init \
+              -backend-config="resource_group_name=$(tfStateRG)" \
+              -backend-config="storage_account_name=$(tfStateStorage)" \
+              -backend-config="container_name=$(tfStateContainer)" \
+              -backend-config="key=$(tfStateKey)"
+          displayName: 'Terraform Init with SP Auth'
 
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                echo "Authenticating with Azure CLI"
+        - task: AzureCLI@2
+          displayName: 'Remove DevOps Agent IP from Key Vault & Storage'
+          condition: always()
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              agentIP=$(curl -s https://checkip.amazonaws.com)
+              echo "Removing IP: $agentIP from Key Vault and Storage Account"
 
-                terraform init \
-                  -backend-config="resource_group_name=$(tfStateRG)" \
-                  -backend-config="storage_account_name=$(tfStateStorage)" \
-                  -backend-config="container_name=$(tfStateContainer)" \
-                  -backend-config="key=$(tfStateKey)"
+              az keyvault network-rule remove \
+                --name kv-uks-lab12345 \
+                --resource-group chaos-lab-rg \
+                --ip-address $agentIP
 
-                terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
+              az storage account network-rule remove \
+                --resource-group $(tfStateRG) \
+                --account-name $(tfStateStorage) \
+                --ip-address $agentIP
 
-          - publish: tfplan
-            artifact: terraformPlan
+- stage: Plan
+  displayName: 'Terraform Plan'
+  dependsOn: Init
+  jobs:
+    - job: PlanJob
+      displayName: 'Plan Job'
+      steps:
+        - checkout: self
+          persistCredentials: true
 
-          - task: AzureCLI@2
-            displayName: 'Remove DevOps Agent IP from Key Vault'
-            condition: always()
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                agentIP=$(curl -s https://checkip.amazonaws.com)
-                echo "Removing IP: $agentIP from Key Vault"
-                az keyvault network-rule remove \
-                  --name kv-uks-lab12345 \
-                  --resource-group chaos-lab-rg \
-                  --ip-address $agentIP
+        - script: |
+            echo "Installing Terraform $(terraformVersion)..."
+            wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+            unzip terraform_$(terraformVersion)_linux_amd64.zip
+            sudo mv terraform /usr/local/bin/
+            terraform --version
+          displayName: 'Install Terraform'
 
-  - stage: Apply
-    displayName: 'Terraform Apply'
-    jobs:
-      - deployment: ApplyJob
-        displayName: 'Terraform Apply with Approval'
-        environment: ChaosStudioEnv
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-                  persistCredentials: true
+        - task: AzureCLI@2
+          displayName: 'Add DevOps Agent IP to Key Vault & Storage'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              agentIP=$(curl -s https://checkip.amazonaws.com)
+              echo "Adding IP: $agentIP to Key Vault and Storage Account"
+              az keyvault network-rule add \
+                --name kv-uks-lab12345 \
+                --resource-group chaos-lab-rg \
+                --ip-address $agentIP
 
-                - script: |
-                    echo "Installing Terraform $(terraformVersion)..."
-                    wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-                    unzip terraform_$(terraformVersion)_linux_amd64.zip
-                    sudo mv terraform /usr/local/bin/
-                    terraform --version
-                  displayName: 'Install Terraform'
+              az storage account network-rule add \
+                --resource-group $(tfStateRG) \
+                --account-name $(tfStateStorage) \
+                --ip-address $agentIP
 
-                - task: AzureCLI@2
-                  displayName: 'Add DevOps Agent IP to Key Vault'
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: bash
-                    scriptLocation: inlineScript
-                    inlineScript: |
-                      agentIP=$(curl -s https://checkip.amazonaws.com)
-                      echo "Adding IP: $agentIP to Key Vault"
-                      az keyvault network-rule add \
-                        --name kv-uks-lab12345 \
-                        --resource-group chaos-lab-rg \
-                        --ip-address $agentIP
+        - script: |
+            echo "Terraform Plan using Service Principal"
+            export ARM_CLIENT_ID=$(servicePrincipalId)
+            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+            export ARM_TENANT_ID=$(tenantId)
+            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
-                - task: DownloadPipelineArtifact@2
-                  displayName: 'Download tfplan artifact'
-                  inputs:
-                    artifact: terraformPlan
-                    path: terraformPlan
+            terraform init \
+              -backend-config="resource_group_name=$(tfStateRG)" \
+              -backend-config="storage_account_name=$(tfStateStorage)" \
+              -backend-config="container_name=$(tfStateContainer)" \
+              -backend-config="key=$(tfStateKey)"
 
-                - task: AzureCLI@2
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: bash
-                    scriptLocation: inlineScript
-                    inlineScript: |
-                      echo "Terraform Apply with Azure CLI context"
+            terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
+          displayName: 'Terraform Plan with SP Auth'
 
-                      terraform init \
-                        -backend-config="resource_group_name=$(tfStateRG)" \
-                        -backend-config="storage_account_name=$(tfStateStorage)" \
-                        -backend-config="container_name=$(tfStateContainer)" \
-                        -backend-config="key=$(tfStateKey)"
+        - publish: tfplan
+          artifact: terraformPlan
 
-                      echo "Moving tfplan to working directory"
-                      mv terraformPlan/tfplan tfplan
+        - task: AzureCLI@2
+          displayName: 'Remove DevOps Agent IP from Key Vault & Storage'
+          condition: always()
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              agentIP=$(curl -s https://checkip.amazonaws.com)
+              echo "Removing IP: $agentIP from Key Vault and Storage Account"
+              az keyvault network-rule remove \
+                --name kv-uks-lab12345 \
+                --resource-group chaos-lab-rg \
+                --ip-address $agentIP
 
-                      terraform apply -auto-approve tfplan
+              az storage account network-rule remove \
+                --resource-group $(tfStateRG) \
+                --account-name $(tfStateStorage) \
+                --ip-address $agentIP
 
-                - task: AzureCLI@2
-                  displayName: 'Remove DevOps Agent IP from Key Vault'
-                  condition: always()
-                  inputs:
-                    azureSubscription: $(azureSubscription)
-                    scriptType: bash
-                    scriptLocation: inlineScript
-                    inlineScript: |
-                      agentIP=$(curl -s https://checkip.amazonaws.com)
-                      echo "Removing IP: $agentIP from Key Vault"
-                      az keyvault network-rule remove \
-                        --name kv-uks-lab12345 \
-                        --resource-group chaos-lab-rg \
-                        --ip-address $agentIP
+- stage: Apply
+  displayName: 'Terraform Apply'
+  dependsOn: Plan
+  jobs:
+    - deployment: ApplyJob
+      displayName: 'Terraform Apply with Approval'
+      environment: ChaosStudioEnv
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+                persistCredentials: true
+
+              - script: |
+                  echo "Installing Terraform $(terraformVersion)..."
+                  wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+                  unzip terraform_$(terraformVersion)_linux_amd64.zip
+                  sudo mv terraform /usr/local/bin/
+                  terraform --version
+                displayName: 'Install Terraform'
+
+              - task: AzureCLI@2
+                displayName: 'Add DevOps Agent IP to Key Vault & Storage'
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    agentIP=$(curl -s https://checkip.amazonaws.com)
+                    echo "Adding IP: $agentIP to Key Vault and Storage Account"
+                    az keyvault network-rule add \
+                      --name kv-uks-lab12345 \
+                      --resource-group chaos-lab-rg \
+                      --ip-address $agentIP
+
+                    az storage account network-rule add \
+                      --resource-group $(tfStateRG) \
+                      --account-name $(tfStateStorage) \
+                      --ip-address $agentIP
+
+              - task: DownloadPipelineArtifact@2
+                displayName: 'Download tfplan artifact'
+                inputs:
+                  artifact: terraformPlan
+                  path: terraformPlan
+
+              - script: |
+                  echo "Terraform Apply using Service Principal"
+                  export ARM_CLIENT_ID=$(servicePrincipalId)
+                  export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+                  export ARM_TENANT_ID=$(tenantId)
+                  export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+
+                  terraform init \
+                    -backend-config="resource_group_name=$(tfStateRG)" \
+                    -backend-config="storage_account_name=$(tfStateStorage)" \
+                    -backend-config="container_name=$(tfStateContainer)" \
+                    -backend-config="key=$(tfStateKey)"
+
+                  echo "Moving tfplan to working directory"
+                  mv terraformPlan/tfplan tfplan
+
+                  terraform apply -auto-approve tfplan
+                displayName: 'Terraform Apply with SP Auth'
+
+              - task: AzureCLI@2
+                displayName: 'Remove DevOps Agent IP from Key Vault & Storage'
+                condition: always()
+                inputs:
+                  azureSubscription: $(azureSubscription)
+                  scriptType: bash
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    agentIP=$(curl -s https://checkip.amazonaws.com)
+                    echo "Removing IP: $agentIP from Key Vault and Storage Account"
+                    az keyvault network-rule remove \
+                      --name kv-uks-lab12345 \
+                      --resource-group chaos-lab-rg \
+                      --ip-address $agentIP
+
+                    az storage account network-rule remove \
+                      --resource-group $(tfStateRG) \
+                      --account-name $(tfStateStorage) \
+                      --ip-address $agentIP
