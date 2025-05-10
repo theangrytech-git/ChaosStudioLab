@@ -40,14 +40,14 @@ stages:
                 
                 echo "Adding agent IP to Storage Account firewall..."
                 az storage account network-rule add \
-                  --resource-group ${{ variables.resourceGroupName }} \
-                  --account-name ${{ variables.storageAccountName }} \
+                  --resource-group ${{ variables.tfStateRG }} \
+                  --account-name ${{ variables.tfStateStorage }} \
                   --ip-address $AGENT_IP
                 
-                echo "Adding agent IP to Key Vault firewall (if applicable)..."
-                az keyvault network-rule add \
-                  --name ${{ variables.keyVaultName }} \
-                  --ip-address $AGENT_IP
+                #echo "Adding agent IP to Key Vault firewall (if applicable)..."
+                #az keyvault network-rule add \
+                #  --name ${{ variables.keyVaultName }} \
+                #  --ip-address $AGENT_IP
 
         - script: |
             echo "Terraform Init using Service Principal"
@@ -74,14 +74,14 @@ stages:
               inlineScript: |
                 echo "Removing agent IP from Storage Account..."
                 az storage account network-rule remove \
-                  --resource-group ${{ variables.resourceGroupName }} \
-                  --account-name ${{ variables.storageAccountName }} \
-                  --ip-address $(agent_ip)
+                  --resource-group ${{ variables.tfStateRG }} \
+                  --account-name ${{ variables.tfStateStorage }} \
+                  --ip-address $AGENT_IP
 
-                echo "Removing agent IP from Key Vault..."
-                az keyvault network-rule remove \
-                  --name ${{ variables.keyVaultName }} \
-                  --ip-address $(agent_ip)
+                #echo "Removing agent IP from Key Vault..."
+                #az keyvault network-rule remove \
+                #  --name ${{ variables.keyVaultName }} \
+                #  --ip-address $(agent_ip)
 
 - stage: Plan
   displayName: 'Terraform Plan'
