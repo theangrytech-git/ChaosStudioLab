@@ -66,6 +66,20 @@ stages:
             displayName: 'Install Terraform'
 
           - task: AzureCLI@2
+            displayName: 'Add DevOps Agent IP to Key Vault'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                agentIP=$(curl -s https://checkip.amazonaws.com)
+                echo "Adding IP: $agentIP to Key Vault"
+                az keyvault network-rule add \
+                  --name kv-uks-lab12345 \
+                  --resource-group chaos-lab-rg \
+                  --ip-address $agentIP
+
+          - task: AzureCLI@2
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: bash
@@ -80,6 +94,24 @@ stages:
                   -backend-config="key=$(tfStateKey)"
 
                 terraform plan -var="subscription_id=$(subscriptionId)" -var-file="env.tfvars" -out=tfplan
+
+          - publish: tfplan
+            artifact: terraformPlan
+
+          - task: AzureCLI@2
+            displayName: 'Remove DevOps Agent IP from Key Vault'
+            condition: always()
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                agentIP=$(curl -s https://checkip.amazonaws.com)
+                echo "Removing IP: $agentIP from Key Vault"
+                az keyvault network-rule remove \
+                  --name kv-uks-lab12345 \
+                  --resource-group chaos-lab-rg \
+                  --ip-address $agentIP
 
           - publish: tfplan
             artifact: terraformPlan
@@ -105,6 +137,20 @@ stages:
                   terraform --version
                 displayName: 'Install Terraform'
 
+              - task: AzureCLI@2
+                displayName: 'Add DevOps Agent IP to Key Vault'
+                inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      agentIP=$(curl -s https://checkip.amazonaws.com)
+                      echo "Adding IP: $agentIP to Key Vault"
+                      az keyvault network-rule add \
+                        --name kv-uks-lab12345 \
+                        --resource-group chaos-lab-rg \
+                        --ip-address $agentIP
+
               - task: DownloadPipelineArtifact@2
                 displayName: 'Download tfplan artifact'
                 inputs:
@@ -129,3 +175,18 @@ stages:
                     mv terraformPlan/tfplan tfplan
 
                     terraform apply -auto-approve tfplan
+
+              - task: AzureCLI@2
+                displayName: 'Remove DevOps Agent IP from Key Vault'
+                condition: always()
+                inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      agentIP=$(curl -s https://checkip.amazonaws.com)
+                      echo "Removing IP: $agentIP from Key Vault"
+                      az keyvault network-rule remove \
+                        --name kv-uks-lab12345 \
+                        --resource-group chaos-lab-rg \
+                        --ip-address $agentIP
