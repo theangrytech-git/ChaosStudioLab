@@ -36,22 +36,22 @@ stages:
           displayName: 'Terraform Init with SP Auth'
           inputs:
             azureSubscription: $(azureSubscription)
-            addSpnToEnvironment: true
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
               echo "Logging into Azure using SP and running terraform init..."
 
+              # Export required Terraform environment variables
               export ARM_CLIENT_ID=$servicePrincipalId
               export ARM_CLIENT_SECRET=$servicePrincipalKey
-              export ARM_SUBSCRIPTION_ID=$subscriptionId
               export ARM_TENANT_ID=$tenantId
+              export ARM_SUBSCRIPTION_ID=$subscriptionId
 
               terraform init \
-                -backend-config="resource_group_name=$(tfStateRG)" \
-                -backend-config="storage_account_name=$(tfStateStorage)" \
-                -backend-config="container_name=$(tfStateContainer)" \
-                -backend-config="key=$(tfStateKey)"
+              -backend-config="resource_group_name=$(tfStateRG)" \
+              -backend-config="storage_account_name=$(tfStateStorage)" \
+              -backend-config="container_name=$(tfStateContainer)" \
+              -backend-config="key=$(tfStateKey)"
 
   - stage: Plan
     displayName: 'Terraform Plan'
