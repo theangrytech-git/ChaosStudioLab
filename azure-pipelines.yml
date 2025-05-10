@@ -8,10 +8,6 @@ variables:
   tfStateStorage: 'chaosstatestorage'
   tfStateContainer: 'tfstate'
   tfStateKey: 'chaosstudio.tfstate'
-  servicePrincipalId: $(servicePrincipalId)
-  servicePrincipalKey: $(servicePrincipalKey)
-  tenantId: $(tenantId)
-  subscriptionId: $(subscriptionId)
 
 stages:
 - stage: Init
