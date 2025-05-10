@@ -100,7 +100,6 @@ stages:
                 --account-name ${{ variables.tfStateStorage }} \
                 --ip-address $(agent_ip)
 
-
 - stage: Plan
   displayName: 'Terraform Plan'
   dependsOn: Init
@@ -119,6 +118,30 @@ stages:
             terraform --version
           displayName: 'Install Terraform'
 
+        - script: |
+            echo "Removing old Azure CLI..."
+            sudo apt-get remove -y azure-cli
+
+            echo "Installing dependencies..."
+            sudo apt-get update
+            sudo apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg
+
+            echo "Adding Microsoft package signing key to keyring..."
+            sudo mkdir -p /etc/apt/keyrings
+            curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/microsoft.gpg > /dev/null
+
+            echo "Adding Azure CLI repository with correct signed-by..."
+            AZ_REPO=$(lsb_release -cs)
+            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+
+            echo "Installing latest Azure CLI..."
+            sudo apt-get update
+            sudo apt-get install -y azure-cli
+
+            echo "Azure CLI version after upgrade:"
+            az --version
+          displayName: 'Install Latest Azure CLI'
+
         - task: AzureCLI@2
           displayName: 'Temporarily Open Storage Account for Plan'
           inputs:
@@ -136,10 +159,11 @@ stages:
                 --account-name $(tfStateStorage) \
                 --ip-address $AGENT_IP
 
-              echo "Adding agent IP to Key Vault firewall (if applicable)..."
-              az keyvault network-rule add \
-                --name $(keyVaultName) \
-                --ip-address $AGENT_IP
+              # Optional Key Vault rule (uncomment if needed)
+              # echo "Adding agent IP to Key Vault firewall..."
+              # az keyvault network-rule add \
+              #   --name $(keyVaultName) \
+              #   --ip-address $AGENT_IP
 
         - script: |
             echo "Terraform Plan using Service Principal"
@@ -180,10 +204,11 @@ stages:
                 --account-name $(tfStateStorage) \
                 --ip-address $(agent_ip)
 
-              echo "Removing agent IP from Key Vault..."
-              az keyvault network-rule remove \
-                --name $(keyVaultName) \
-                --ip-address $(agent_ip)
+              # Optional Key Vault cleanup (uncomment if added above)
+              # echo "Removing agent IP from Key Vault..."
+              # az keyvault network-rule remove \
+              #   --name $(keyVaultName) \
+              #   --ip-address $(agent_ip)
 
 - stage: Apply
   displayName: 'Terraform Apply'
