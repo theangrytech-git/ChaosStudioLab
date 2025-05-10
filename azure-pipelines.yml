@@ -49,7 +49,7 @@ stages:
 
             echo "Azure CLI version after upgrade:"
             az --version
-            displayName: 'Install Latest Azure CLI'
+          displayName: 'Install Latest Azure CLI'
 
 
         - task: AzureCLI@2
