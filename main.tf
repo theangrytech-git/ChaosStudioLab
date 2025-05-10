@@ -597,7 +597,7 @@ need to add in a custom ext script to install Hyper-V, IIS, and potentially crea
 resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   count               = var.servercounta
   name                = "vm-${var.ukscode}-a-${count.index}"
-  depends_on          = [azurerm_key_vault.kv1]
+  depends_on          = [azurerm_key_vault.kv1, azurerm_key_vault_secret.vmpassword1]
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
   size                = "Standard_D2s_v4"
@@ -631,13 +631,12 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   identity {
     type = "SystemAssigned"
   }
-depends_on = [azurerm_key_vault_secret.vmpassword1]
 }
 
 resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   count               = var.servercountb
   name                = "vm-${var.ukscode}-b-${count.index}"
-  depends_on          = [azurerm_key_vault.kv1]
+  depends_on          = [azurerm_key_vault.kv1, azurerm_key_vault_secret.vmpassword1]
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
   size                = "Standard_D2s_v4"
@@ -671,7 +670,6 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   identity {
     type = "SystemAssigned"
   }
-depends_on = [azurerm_key_vault_secret.vmpassword2]
 }
 
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
