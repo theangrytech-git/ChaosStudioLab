@@ -52,6 +52,29 @@ stages:
                 --account-name $(tfStateStorage) \
                 --ip-address $agentIP
 
+        - task: AzureCLI@2
+          displayName: 'Validate Storage Account Access'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Validating access to Storage Account..."
+              accountKey=$(az storage account keys list \
+              --resource-group $(tfStateRG) \
+              --account-name $(tfStateStorage) \
+              --query '[0].value' -o tsv)
+
+              az storage blob list \
+              --container-name $(tfStateContainer) \
+              --account-name $(tfStateStorage) \
+              --account-key $accountKey \
+              --auth-mode key \
+              --output table || {
+              echo "ERROR: Access to the storage account is not available. Check IP/network rules."
+              exit 1
+              }
+
         - script: |
             echo "Terraform Init using Service Principal"
             export ARM_CLIENT_ID=$(servicePrincipalId)
@@ -123,6 +146,28 @@ stages:
                 --resource-group $(tfStateRG) \
                 --account-name $(tfStateStorage) \
                 --ip-address $agentIP
+        - task: AzureCLI@2
+          displayName: 'Validate Storage Account Access'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Validating access to Storage Account..."
+              accountKey=$(az storage account keys list \
+              --resource-group $(tfStateRG) \
+              --account-name $(tfStateStorage) \
+              --query '[0].value' -o tsv)
+
+              az storage blob list \
+              --container-name $(tfStateContainer) \
+              --account-name $(tfStateStorage) \
+              --account-key $accountKey \
+              --auth-mode key \
+              --output table || {
+              echo "ERROR: Access to the storage account is not available. Check IP/network rules."
+              exit 1
+              }
 
         - script: |
             echo "Terraform Plan using Service Principal"
