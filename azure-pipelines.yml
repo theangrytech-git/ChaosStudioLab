@@ -78,22 +78,24 @@ stages:
             echo "Sleeping 20 seconds to allow firewall rules to propagate..."
             sleep 20
 
-            echo "Checking IP rules..."
+            echo "Logging in to Azure CLI using SP..."
+            az login --service-principal \
+              --username "$ARM_CLIENT_ID" \
+              --password "$ARM_CLIENT_SECRET" \
+              --tenant "$ARM_TENANT_ID" > /dev/null
+
+            echo "Checking Storage Account IP rules (debug)..."
             az storage account network-rule list \
               --resource-group $(tfStateRG) \
               --account-name $(tfStateStorage) \
               --query "ipRules"
 
-            terraform init \
+            terraform init -reconfigure \
               -backend-config="resource_group_name=$(tfStateRG)" \
               -backend-config="storage_account_name=$(tfStateStorage)" \
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
           displayName: 'Terraform Init with SP Auth'
-
-        - publish: .terraform
-          artifact: terraformWorkspace
-          displayName: 'Publish .terraform Directory'
 
         - task: AzureCLI@2
           displayName: 'Remove Agent IP from Firewalls'
