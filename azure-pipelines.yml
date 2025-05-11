@@ -117,7 +117,7 @@ stages:
           displayName: 'Download Terraform Init State'
           inputs:
             artifact: terraformWorkspace
-            path: terraformWorkspace
+            path: $(Pipeline.Workspace)/terraformWorkspace
 
         - script: |
             echo "Installing Terraform $(terraformVersion)..."
@@ -129,20 +129,26 @@ stages:
 
         - script: |
             echo "Terraform Plan using Service Principal"
+            
             export ARM_CLIENT_ID=$(servicePrincipalId)
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
-            export ARM_TENANT_ID=$(tenantId)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+            export ARM_TENANT_ID=$(tenantId)
 
-            cd terraformWorkspace
+            echo "Switching to downloaded Terraform workspace directory"
+            cd $(Pipeline.Workspace)/terraformWorkspace
 
+            echo "Re-initializing Terraform without backend..."
+            terraform init -backend=false
+
+            echo "Running terraform plan..."
             terraform plan \
               -var="subscription_id=$(subscriptionId)" \
               -var-file="env.tfvars" \
               -out=tfplan
-          displayName: 'Terraform Plan with SP Auth'
+          displayName: 'Terraform Plan with SP Auth (No backend init)'
 
-        - publish: terraformWorkspace/tfplan
+        - publish: $(Pipeline.Workspace)/terraformWorkspace/tfplan
           artifact: terraformPlan
 
 - stage: Apply
