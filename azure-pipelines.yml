@@ -75,8 +75,14 @@ stages:
             export ARM_TENANT_ID=$(tenantId)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
-            echo "Sleeping 10 seconds to allow firewall rules to propagate..."
-            sleep 10
+            echo "Sleeping 20 seconds to allow firewall rules to propagate..."
+            sleep 20
+
+            echo "Checking IP rules..."
+            az storage account network-rule list \
+              --resource-group $(tfStateRG) \
+              --account-name $(tfStateStorage) \
+              --query "ipRules"
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
