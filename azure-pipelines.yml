@@ -86,6 +86,11 @@ stages:
               -backend-config="key=$(tfStateKey)"
           displayName: 'Terraform Init with SP Auth'
 
+          
+        - publish: $(Build.SourcesDirectory)
+          artifact: terraformWorkspace
+          displayName: 'Publish Terraform Init Directory'
+
         - task: AzureCLI@2
           displayName: 'Remove Agent IP from Firewalls'
           condition: always()
@@ -107,8 +112,9 @@ stages:
     - job: PlanJob
       displayName: 'Plan Job'
       steps:
-        - checkout: self
-          persistCredentials: true
+        - download: current
+          artifact: terraformWorkspace
+          displayName: 'Download Terraform Init Directory'
 
         - script: |
             echo "Installing Terraform $(terraformVersion)..."
@@ -119,61 +125,13 @@ stages:
           displayName: 'Install Terraform'
 
         - script: |
-            echo "Removing old Azure CLI..."
-            sudo apt-get remove -y azure-cli
-
-            echo "Installing dependencies..."
-            sudo apt-get update
-            sudo apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg
-
-            echo "Adding Microsoft package signing key to keyring..."
-            sudo mkdir -p /etc/apt/keyrings
-            curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/microsoft.gpg > /dev/null
-
-            echo "Adding Azure CLI repository with correct signed-by..."
-            AZ_REPO=$(lsb_release -cs)
-            echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
-
-            echo "Installing latest Azure CLI..."
-            sudo apt-get update
-            sudo apt-get install -y azure-cli
-
-            echo "Azure CLI version after upgrade:"
-            az --version
-          displayName: 'Install Latest Azure CLI'
-
-        - task: AzureCLI@2
-          displayName: 'Temporarily Open Storage Account for Plan'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Getting agent's public IP..."
-              AGENT_IP=$(curl -s https://api.ipify.org)
-              echo "##vso[task.setvariable variable=plan_agent_ip]$AGENT_IP"
-
-              echo "Adding agent IP to Storage Account firewall..."
-              az storage account network-rule add \
-                --resource-group ${{ variables.tfStateRG }} \
-                --account-name ${{ variables.tfStateStorage }} \
-                --ip-address $AGENT_IP
-
-        - script: |
             echo "Terraform Plan using Service Principal"
+            cd $(Pipeline.Workspace)/terraformWorkspace
+
             export ARM_CLIENT_ID=$(servicePrincipalId)
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_TENANT_ID=$(tenantId)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
-
-            echo "Waiting for firewall rule propagation..."
-            sleep 10
-
-            terraform init -reconfigure \
-              -backend-config="resource_group_name=$(tfStateRG)" \
-              -backend-config="storage_account_name=$(tfStateStorage)" \
-              -backend-config="container_name=$(tfStateContainer)" \
-              -backend-config="key=$(tfStateKey)"
 
             terraform plan \
               -var="subscription_id=$(subscriptionId)" \
@@ -181,22 +139,9 @@ stages:
               -out=tfplan
           displayName: 'Terraform Plan with SP Auth'
 
-        - publish: tfplan
+        - publish: $(Pipeline.Workspace)/terraformWorkspace/tfplan
           artifact: terraformPlan
-
-        - task: AzureCLI@2
-          displayName: 'Remove Agent IP from Storage Firewall (Plan)'
-          condition: always()
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Removing agent IP from Storage Account..."
-              az storage account network-rule remove \
-                --resource-group ${{ variables.tfStateRG }} \
-                --account-name ${{ variables.tfStateStorage }} \
-                --ip-address $(plan_agent_ip)
+          displayName: 'Publish Plan Output'
 
 - stage: Apply
   displayName: 'Terraform Apply'
