@@ -277,6 +277,7 @@ resource "azurerm_key_vault" "kv1" {
       "88.97.161.207",
       "141.170.17.195",
       "80.169.189.194",
+      var.agent_ip,
       ]
   }
 
