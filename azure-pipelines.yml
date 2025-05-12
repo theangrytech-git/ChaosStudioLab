@@ -82,20 +82,6 @@ stages:
               -backend-config="key=$(tfStateKey)"
           displayName: 'Terraform Init with SP Auth'
 
-#        - task: AzureCLI@2
-#          displayName: 'Lock Storage Account Again'
-#          condition: always()
-#          inputs:
-#            azureSubscription: $(azureSubscription)
-#            scriptType: bash
-#            scriptLocation: inlineScript
-#            inlineScript: |
-#              echo "Locking down Storage Account again..."
-#              az storage account update \
-#                --name ${{ variables.tfStateStorage }} \
-#                --resource-group ${{ variables.tfStateRG }} \
-#                --default-action Deny
-
 - stage: Plan
   displayName: 'Terraform Plan'
   dependsOn: Init
@@ -135,6 +121,20 @@ stages:
 
         - publish: tfplan
           artifact: terraformPlan
+        
+        - task: AzureCLI@2
+          displayName: 'Lock Storage Account Again'
+          condition: always()
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Locking down Storage Account again..."
+              az storage account update \
+                --name ${{ variables.tfStateStorage }} \
+                --resource-group ${{ variables.tfStateRG }} \
+                --default-action Deny
 
 
 - stage: Apply
