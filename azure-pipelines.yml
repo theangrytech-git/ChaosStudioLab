@@ -68,44 +68,40 @@ stages:
                 --account-name ${{ variables.tfStateStorage }} \
                 --ip-address $AGENT_IP
 
-        - script: |
-            echo "Terraform Init using Service Principal"
-            export ARM_CLIENT_ID=$(servicePrincipalId)
-            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
-            export ARM_TENANT_ID=$(tenantId)
-            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+              - script: |
+                echo "Terraform Init using Service Principal"
 
-            echo "Sleeping 10 seconds before access validation..."
-            sleep 10
+                export ARM_CLIENT_ID=$(servicePrincipalId)
+                export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+                export ARM_TENANT_ID=$(tenantId)
+                export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
-            echo "Validating IP access to storage..."
-            MAX_RETRIES=6
-            RETRY_INTERVAL=10
-            SUCCESS=0
+                export AZURE_STORAGE_ACCOUNT=$(tfStateStorage)
+                export AZURE_CLIENT_ID=$ARM_CLIENT_ID
+                export AZURE_CLIENT_SECRET=$ARM_CLIENT_SECRET
+                export AZURE_TENANT_ID=$ARM_TENANT_ID
 
-            for i in $(seq 1 $MAX_RETRIES); do
-              echo "Attempt $i to validate IP access..."
-              az storage container list \
-                --account-name $(tfStateStorage) \
-                --auth-mode login \
-                --output none && SUCCESS=1 && break
+                echo "Waiting 30 seconds for firewall rule propagation..."
+                sleep 30
 
-              echo "Access not ready. Sleeping $RETRY_INTERVAL seconds..."
-              sleep $RETRY_INTERVAL
-            done
+                echo "Logging in with service principal to test storage access..."
+                az login --service-principal \
+                -u $AZURE_CLIENT_ID \
+                -p $AZURE_CLIENT_SECRET \
+                --tenant $AZURE_TENANT_ID
 
-            if [ $SUCCESS -ne 1 ]; then
-              echo "Failed to validate IP access after multiple attempts."
-              exit 1
-            fi
+                echo "Testing blob container list access..."
+                az storage container list \
+                --account-name $AZURE_STORAGE_ACCOUNT \
+                --auth-mode login
 
-            echo "Running terraform init..."
-            terraform init \
-              -backend-config="resource_group_name=$(tfStateRG)" \
-              -backend-config="storage_account_name=$(tfStateStorage)" \
-              -backend-config="container_name=$(tfStateContainer)" \
-              -backend-config="key=$(tfStateKey)"
-          displayName: 'Terraform Init with SP Auth and Access Validation'
+                echo "Running Terraform Init..."
+                terraform init \
+                -backend-config="resource_group_name=$(tfStateRG)" \
+                -backend-config="storage_account_name=$(tfStateStorage)" \
+                -backend-config="container_name=$(tfStateContainer)" \
+                -backend-config="key=$(tfStateKey)"
+              displayName: 'Terraform Init with SP Auth'
 
         - task: AzureCLI@2
           displayName: 'Remove Agent IP from Firewalls'
