@@ -89,7 +89,3 @@ variable "days_to_expire" {
   description = "Days until Secret/Cert expire"
   type = number
 }
-
-variable "agent_ip" {
-  type = string
-}
