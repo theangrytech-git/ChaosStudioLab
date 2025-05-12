@@ -161,7 +161,7 @@ stages:
               echo "Discovering Key Vault in RG: ${{ variables.tfStateRG }}"
               KEYVAULT_NAME=$(az keyvault list \
                 --resource-group ${{ variables.tfStateRG }} \
-                --query "[?starts_with(name, 'kv-')].name | [0]" -o tsv)
+                --query "[?starts_with(name, 'keyvault')].name | [0]" -o tsv)
 
               echo "Temporarily enabling public access for Key Vault: $KEYVAULT_NAME"
               az keyvault update \
