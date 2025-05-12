@@ -145,19 +145,29 @@ stages:
       steps:
         - checkout: self
           persistCredentials: true
-
         - task: AzureCLI@2
-          displayName: 'Temporarily Open Storage Account for Apply'
+          displayName: 'Temporarily Open Storage Account and Key Vault for Apply'
           inputs:
             azureSubscription: $(azureSubscription)
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
-              echo "Setting public access temporarily for Apply..."
+              echo "Temporarily allowing public access for Storage Account..."
               az storage account update \
                 --name ${{ variables.tfStateStorage }} \
                 --resource-group ${{ variables.tfStateRG }} \
-                --default-action Allow
+                --default-action Allow 
+
+              echo "Discovering Key Vault in RG: ${{ variables.tfStateRG }}"
+              KEYVAULT_NAME=$(az keyvault list \
+                --resource-group ${{ variables.tfStateRG }} \
+                --query "[?starts_with(name, 'kv-')].name | [0]" -o tsv)
+
+              echo "Temporarily enabling public access for Key Vault: $KEYVAULT_NAME"
+              az keyvault update \
+                --name $KEYVAULT_NAME \
+                --resource-group ${{ variables.tfStateRG }} \
+                --public-network-access Enabled
 
               echo "Waiting 30 seconds for firewall rule propagation..."
               sleep 30
