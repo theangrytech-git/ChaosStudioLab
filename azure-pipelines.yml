@@ -64,6 +64,9 @@ stages:
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow
 
+              echo "Waiting for firewall rule propagation..."
+              sleep 30
+
         - script: |
             echo "Terraform Init using Service Principal"
 
