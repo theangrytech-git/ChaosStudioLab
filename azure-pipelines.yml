@@ -159,7 +159,7 @@ stages:
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow
 
-              echo "Waiting 30 seconds before locking down storage..."
+              echo "Waiting 30 seconds for firewall rule propagation..."
               sleep 30
 
         - script: |
@@ -169,6 +169,13 @@ stages:
             sudo mv terraform /usr/local/bin/
             terraform --version
           displayName: 'Install Terraform'
+
+        - task: DownloadPipelineArtifact@2
+          displayName: 'Download Terraform Plan Artifact'
+          inputs:
+            buildType: 'current'
+            artifactName: 'terraformPlan'
+            targetPath: '$(Pipeline.Workspace)/terraformPlan'
 
         - script: |
             echo "Terraform Apply using Service Principal"
@@ -183,7 +190,7 @@ stages:
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
 
-            terraform apply tfplan
+            terraform apply "$(Pipeline.Workspace)/terraformPlan/tfplan"
           displayName: 'Terraform Apply with SP Auth'
 
         - script: |
