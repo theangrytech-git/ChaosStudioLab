@@ -159,6 +159,9 @@ stages:
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow
 
+              echo "Waiting 30 seconds before locking down storage..."
+              sleep 30
+
         - script: |
             echo "Installing Terraform $(terraformVersion)..."
             wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
