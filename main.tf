@@ -335,6 +335,7 @@ resource "azurerm_key_vault_access_policy" "kv1_vmsb_access" {
                          CREATE KEY VAULT SECRETS
 *******************************************************************************/
 resource "azurerm_key_vault_secret" "vmpassword1" {
+  depends_on   = [azurerm_key_vault.kv1]
   name         = "vmpassword1"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
@@ -342,7 +343,8 @@ resource "azurerm_key_vault_secret" "vmpassword1" {
   expiration_date = local.expiration_date
 }
 
-resource "azurerm_key_vault_secret" "vmpassword2" {
+resource "azurerm_key_vault_secret" "vmpassword2" {  
+  depends_on   = [azurerm_key_vault.kv1]
   name         = "vmpassword2"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
