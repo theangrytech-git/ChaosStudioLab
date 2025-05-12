@@ -163,11 +163,22 @@ stages:
                 --resource-group ${{ variables.tfStateRG }} \
                 --query "[?starts_with(name, 'keyvault')].name | [0]" -o tsv)
 
-              echo "Temporarily enabling public access for Key Vault: $KEYVAULT_NAME"
-              az keyvault update \
-                --name $KEYVAULT_NAME \
+              if [ -z "$KEYVAULT_NAME" ]; then
+                echo "ERROR: No Key Vault found with name prefix 'keyvault' in resource group ${{ variables.tfStateRG }}"
+                az keyvault list --resource-group ${{ variables.tfStateRG }} -o table
+                exit 1
+              fi
+
+              echo "Key Vault discovered: $KEYVAULT_NAME"
+
+              echo "Getting public IP of Azure DevOps agent..."
+              AGENT_IP=$(curl -s ifconfig.me)
+
+              echo "Adding IP $AGENT_IP to Key Vault firewall..."
+              az keyvault network-rule add \
+                --name "$KEYVAULT_NAME" \
                 --resource-group ${{ variables.tfStateRG }} \
-                --public-network-access Enabled
+                --ip-address "$AGENT_IP"
 
               echo "Waiting 30 seconds for firewall rule propagation..."
               sleep 30
