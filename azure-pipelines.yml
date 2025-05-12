@@ -158,28 +158,6 @@ stages:
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow 
 
-              echo "Discovering Key Vault in RG: ${{ variables.tfStateRG }}"
-              KEYVAULT_NAME=$(az keyvault list \
-                --resource-group ${{ variables.tfStateRG }} \
-                --query "[?starts_with(name, 'keyvault')].name | [0]" -o tsv)
-
-              if [ -z "$KEYVAULT_NAME" ]; then
-                echo "ERROR: No Key Vault found with name prefix 'keyvault' in resource group ${{ variables.tfStateRG }}"
-                az keyvault list --resource-group ${{ variables.tfStateRG }} -o table
-                exit 1
-              fi
-
-              echo "Key Vault discovered: $KEYVAULT_NAME"
-
-              echo "Getting public IP of Azure DevOps agent..."
-              AGENT_IP=$(curl -s ifconfig.me)
-
-              echo "Adding IP $AGENT_IP to Key Vault firewall..."
-              az keyvault network-rule add \
-                --name "$KEYVAULT_NAME" \
-                --resource-group ${{ variables.tfStateRG }} \
-                --ip-address "$AGENT_IP"
-
               echo "Waiting 30 seconds for firewall rule propagation..."
               sleep 30
 
@@ -197,6 +175,12 @@ stages:
             buildType: 'current'
             artifactName: 'terraformPlan'
             targetPath: '$(Pipeline.Workspace)/terraformPlan'
+          
+        - script: |
+            echo "Getting Azure DevOps agent IP..."
+            agent_ip=$(curl -s https://api.ipify.org)
+            echo "##vso[task.setvariable variable=agent_ip]$agent_ip"
+          displayName: 'Get Agent Public IP'  
 
         - script: |
             echo "Terraform Apply using Service Principal"
@@ -211,7 +195,12 @@ stages:
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
 
-            terraform apply "$(Pipeline.Workspace)/terraformPlan/tfplan"
+            terraform apply \
+              -var="subscription_id=$(subscriptionId)" \
+              -var="agent_ip=$(agent_ip)" \
+              "$(Pipeline.Workspace)/terraformPlan/tfplan"
+
+            #terraform apply "$(Pipeline.Workspace)/terraformPlan/tfplan"
           displayName: 'Terraform Apply with SP Auth'
 
         - script: |
