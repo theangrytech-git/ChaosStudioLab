@@ -93,4 +93,5 @@ variable "days_to_expire" {
 variable "agent_ip" {
   description = "Azure DevOps agent public IP"
   type        = string
+  default = ""
 }
