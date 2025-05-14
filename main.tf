@@ -268,7 +268,7 @@ resource "azurerm_key_vault" "kv1" {
   purge_protection_enabled    = false
   public_network_access_enabled = true
   network_acls {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = concat(
       [azurerm_subnet.uks-hub1-subnet.id]
