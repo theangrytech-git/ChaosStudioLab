@@ -7,3 +7,7 @@ output "_2_Access-URL-via-uks-Firewall" {
 # output "_3_Access-URL-via-ukw-Firewall" {
 #   value = "Use this URL to access directly to the ${var.ukw} Firewall: http://${azurerm_public_ip.ukw-fwpip.fqdn} "
 # }
+
+output "key_vault_name" {
+  value = azurerm_key_vault.kv1.name
+}
