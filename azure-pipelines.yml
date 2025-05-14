@@ -99,12 +99,6 @@ stages:
             sudo mv terraform /usr/local/bin/
             terraform --version
           displayName: 'Install Terraform'
-          
-        - script: |
-            echo "Installing jq for JSON parsing..."
-            sudo apt-get update
-            sudo apt-get install -y jq
-          displayName: 'Install jq'
 
         - script: |
             echo "Getting Azure DevOps agent IP..."
@@ -183,20 +177,6 @@ stages:
                 --name ${{ variables.tfStateStorage }} \
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow
-              
-        - task: AzureCLI@2
-          displayName: 'Temporarily Open Key Vault for Apply'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: bash
-            scriptLocation: inlineScript
-            inlineScript: |
-              echo "Temporarily allowing public access for Key Vault: $(tfKeyVault)..."
-              az keyvault update \
-                --name $(tfKeyVault) \
-                --resource-group ${{ variables.tfStateRG }} \
-                --public-network-access Enabled || echo "Key Vault not created yet — will succeed during apply"
-
               echo "Waiting 30 seconds for Firewall and Key Vault rule propagation..."
               sleep 30
 
