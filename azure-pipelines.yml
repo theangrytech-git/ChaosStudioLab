@@ -203,11 +203,7 @@ stages:
               -backend-config="key=$(tfStateKey)"
 
             terraform apply \
-              -var="subscription_id=$(subscriptionId)" \
-              -var="agent_ip=$(agent_ip)" \
               "$(Pipeline.Workspace)/terraformPlan/tfplan"
-
-            #terraform apply "$(Pipeline.Workspace)/terraformPlan/tfplan"
           displayName: 'Terraform Apply with SP Auth'
 
         - script: |
