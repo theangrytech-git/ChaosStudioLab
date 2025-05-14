@@ -163,7 +163,12 @@ stages:
               az storage account update \
                 --name ${{ variables.tfStateStorage }} \
                 --resource-group ${{ variables.tfStateRG }} \
-                --default-action Allow 
+                --default-action Allow
+              
+              az keyvault update \
+                --name ${{ variables.tfKeyVault }} \
+                --resource-group ${{ variables.tfStateRG }} \
+              --public-network-access Enabled 
 
               echo "Waiting 30 seconds for firewall rule propagation..."
               sleep 30
