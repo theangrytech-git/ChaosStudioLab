@@ -547,7 +547,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   name                = "${var.ukscode}-${count.index}"
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
-  sku                 = "Standard_D2s_v4"
+  sku                 = "Standard_B1ms"
   instances           = 5
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
