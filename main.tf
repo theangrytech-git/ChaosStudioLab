@@ -79,6 +79,11 @@ resource "azurerm_resource_group" "uks" {
   }
 }
 
+data "azurerm_resource_group" "uks" {
+  name = azurerm_resource_group.uks.name
+  location = azurerm_resource_group.uks.location
+}
+
 # resource "azurerm_resource_group" "ukw" {
 #   name     = "rg-${var.ukw}-${var.labname}-01"
 #   location = var.ukw
@@ -1294,8 +1299,8 @@ data "azurerm_linux_function_app" "uks-fa" {
 *******************************************************************************/
 resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
   name                = "cs-servicebus-ns"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
   sku                 = "Standard"
 
   public_network_access_enabled      = false
@@ -1352,8 +1357,8 @@ resource "azurerm_role_assignment" "sb_kv_access" {
 *******************************************************************************/
 resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   name                = "cs-cosmosdb"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
 
@@ -1388,8 +1393,8 @@ resource "azurerm_key_vault_key" "cosmosdb_key" {
 *******************************************************************************/
 resource "azurerm_eventhub_namespace" "cs_eventhub_ns" {
   name                = "cs-eventhub-ns"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.uks.location
+  resource_group_name = azurerm_resource_group.uks.name
   sku                 = "Standard"
   capacity            = 1
 }
