@@ -707,6 +707,11 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 # checkov:skip=CKV_AZURE_50: No manual VM extensions installed
 }
 
+data "azurerm_resources" "all_vms" {
+  type                = "Microsoft.Compute/virtualMachines"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
 #   count               = var.servercounta
 #   name                = "vm-${var.ukwcode}-a-${count.index}"
@@ -1282,6 +1287,195 @@ data "azurerm_linux_function_app" "uks-fa" {
 }
 
 /*******************************************************************************
+                            CREATE SERVICE BUS
+*******************************************************************************/
+resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
+  name                = "cs-servicebus-ns"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "Standard"
+
+  public_network_access_enabled      = false
+  minimum_tls_version                = "1.2"
+  local_authentication_enabled        = false
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  encryption {
+    key_vault_key_id = azurerm_key_vault_key.kv1.id
+    key_source       = "Microsoft.KeyVault"
+    require_infrastructure_encryption = true
+  }
+}
+
+resource "azurerm_servicebus_queue" "ingress" {
+  name         = "ingress_queue"
+  namespace_id = azurerm_servicebus_namespace.cs_servicebus_ns.id
+  partitioning_enabled = true
+}
+
+resource "azurerm_servicebus_queue" "egress" {
+  name         = "egress_queue"
+  namespace_id = azurerm_servicebus_namespace.cs_servicebus_ns.id
+  partitioning_enabled = true
+}
+
+resource "azurerm_servicebus_topic" "updates" {
+  name         = "tfex_servicebus_topic"
+  namespace_id = azurerm_servicebus_namespace.updates.id
+  partitioning_enabled = true
+}
+
+resource "azurerm_key_vault_key" "sb_key" {
+  name         = "sb-cmk"
+  key_vault_id = azurerm_key_vault.kv1.id
+  # checkov:skip=CKV_AZURE_112 reason="Not using HSM-backed key by design"
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
+  expiration_date = local.expiration_date
+}
+
+data "azurerm_client_config" "current" {}
+
+resource "azurerm_role_assignment" "sb_kv_access" {
+  principal_id         = azurerm_servicebus_namespace.cs_servicebus_ns.identity.principal_id
+  role_definition_name = "Key Vault Crypto Service Encryption User"
+  scope                = azurerm_key_vault.kv1.id
+}
+
+/*******************************************************************************
+                            CREATE COSMOS_DB
+*******************************************************************************/
+resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
+  name                = "cs-cosmosdb"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  offer_type          = "Standard"
+  kind                = "GlobalDocumentDB"
+
+  public_network_access_enabled  = false
+  is_virtual_network_filter_enabled = true
+  disable_key_based_metadata_write_access = true
+
+  consistency_policy {
+    consistency_level = "Session"
+  }
+
+  geo_location {
+    location          = azurerm_resource_group.rg.location
+    failover_priority = 0
+  }
+
+  local_authentication_disabled = true
+  key_vault_key_id = azurerm_key_vault_key.cosmosdb_key.id
+}
+
+resource "azurerm_key_vault_key" "cosmosdb_key" {
+  name         = "cosmos-cmk"
+  key_vault_id = azurerm_key_vault.cazurerm_key_vault.kv1.id
+  # checkov:skip=CKV_AZURE_112 reason="Not using HSM-backed key by design"
+  key_type     = "RSA"
+  key_size     = 2048
+  key_opts     = ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
+  expiration_date = local.expiration_date
+}
+
+/*******************************************************************************
+                            CREATE EVENT HUB
+*******************************************************************************/
+resource "azurerm_eventhub_namespace" "cs_eventhub_ns" {
+  name                = "cs-eventhub-ns"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "Standard"
+  capacity            = 1
+}
+
+/*******************************************************************************
+                          CREATE LOG ANALYTICS
+*******************************************************************************/
+resource "azurerm_monitor_diagnostic_setting" "cosmosdb_logs" {
+  name                       = "cosmosdb-diag"
+  target_resource_id         = azurerm_cosmosdb_account.cs_cosmosdb.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  dynamic "log" {
+    for_each = toset([
+      "DataPlaneRequests", # validate this from Azure CLI or data source
+    ])
+    content {
+      category = log.value
+      enabled  = true
+    }
+  }
+
+  dynamic "metric" {
+    for_each = toset([
+      "AllMetrics", # validate this from Azure CLI or data source
+    ])
+    content {
+      category = metric.value
+      enabled  = true
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "servicebus_logs" {
+  name                       = "servicebus-diag"
+  target_resource_id         = azurerm_servicebus_namespace.cs_servicebus_ns.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  dynamic "log" {
+    for_each = toset([
+      "OperationalLogs",
+    ])
+    content {
+      category = log.value
+      enabled  = true
+    }
+  }
+
+  dynamic "metric" {
+    for_each = toset([
+      "AllMetrics",
+    ])
+    content {
+      category = metric.value
+      enabled  = true
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "eventhub_logs" {
+  name                       = "eventhub-diag"
+  target_resource_id         = azurerm_eventhub_namespace.cs_eventhub_ns.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  dynamic "log" {
+    for_each = toset([
+      "OperationalLogs",
+    ])
+    content {
+      category = log.value
+      enabled  = true
+    }
+  }
+
+  dynamic "metric" {
+    for_each = toset([
+      "AllMetrics",
+    ])
+    content {
+      category = metric.value
+      enabled  = true
+    }
+  }
+}
+
+/*******************************************************************************
                          CREATE MANAGED IDENTITY
 *******************************************************************************/
 resource "azurerm_user_assigned_identity" "uai-uks" {
@@ -1486,10 +1680,13 @@ resource "azurerm_chaos_studio_target" "tgt-eventhub" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vms" {
-  for_each            = data.azurerm_virtual_machine.availability_zone_vms
-  location            = azurerm_resource_group.uks.location
-  target_resource_id  = each.value.id
-  target_type         = "Microsoft-VirtualMachine"
+  for_each = {
+    for res in data.azurerm_resources.all_vms.resources :
+    res.name => res
+  }
+  location             = azurerm_resource_group.rg.location
+  target_resource_id   = each.value.id
+  target_type          = "Microsoft-VirtualMachine"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
