@@ -36,8 +36,11 @@ output "current_subscription_display_name" {
 value = data.azurerm_subscription.current
 }
 locals {
-  days_to_hours = var.days_to_expire * 24
-  expiration_date = timeadd(formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()), "${local.days_to_hours}h")
+  days_to_hours   = var.days_to_expire * 24
+  expiration_date = timeadd(
+    formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()),
+    "${local.days_to_hours}h"
+  )
 }
 
 /*******************************************************************************
@@ -709,7 +712,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 
 data "azurerm_resources" "all_vms" {
   type                = "Microsoft.Compute/virtualMachines"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.uks.name
 }
 
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
@@ -1323,8 +1326,8 @@ resource "azurerm_servicebus_queue" "egress" {
 }
 
 resource "azurerm_servicebus_topic" "updates" {
-  name         = "tfex_servicebus_topic"
-  namespace_id = azurerm_servicebus_namespace.updates.id
+  name         = "updates_topic"
+  namespace_id = azurerm_servicebus_namespace.cs_servicebus_ns.id
   partitioning_enabled = true
 }
 
@@ -1372,7 +1375,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
 
 resource "azurerm_key_vault_key" "cosmosdb_key" {
   name         = "cosmos-cmk"
-  key_vault_id = azurerm_key_vault.cazurerm_key_vault.kv1.id
+  key_vault_id = azurerm_key_vault.kv1.id
   # checkov:skip=CKV_AZURE_112 reason="Not using HSM-backed key by design"
   key_type     = "RSA"
   key_size     = 2048
@@ -1399,50 +1402,27 @@ resource "azurerm_monitor_diagnostic_setting" "cosmosdb_logs" {
   target_resource_id         = azurerm_cosmosdb_account.cs_cosmosdb.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-  dynamic "log" {
-    for_each = toset([
-      "DataPlaneRequests", # validate this from Azure CLI or data source
-    ])
-    content {
-      category = log.value
-      enabled  = true
-    }
+  enabled_log {
+    category = "DataPlaneRequests"
   }
 
-  dynamic "metric" {
-    for_each = toset([
-      "AllMetrics", # validate this from Azure CLI or data source
-    ])
-    content {
-      category = metric.value
-      enabled  = true
-    }
+  metric {
+    category = "AllMetrics"
+    enabled  = true
   }
 }
-
 resource "azurerm_monitor_diagnostic_setting" "servicebus_logs" {
   name                       = "servicebus-diag"
   target_resource_id         = azurerm_servicebus_namespace.cs_servicebus_ns.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-  dynamic "log" {
-    for_each = toset([
-      "OperationalLogs",
-    ])
-    content {
-      category = log.value
-      enabled  = true
-    }
+  enabled_log {
+    category = "OperationalLogs"
   }
 
-  dynamic "metric" {
-    for_each = toset([
-      "AllMetrics",
-    ])
-    content {
-      category = metric.value
-      enabled  = true
-    }
+  metric {
+    category = "AllMetrics"
+    enabled  = true
   }
 }
 
@@ -1451,24 +1431,13 @@ resource "azurerm_monitor_diagnostic_setting" "eventhub_logs" {
   target_resource_id         = azurerm_eventhub_namespace.cs_eventhub_ns.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-  dynamic "log" {
-    for_each = toset([
-      "OperationalLogs",
-    ])
-    content {
-      category = log.value
-      enabled  = true
-    }
+  enabled_log {
+    category = "OperationalLogs"
   }
 
-  dynamic "metric" {
-    for_each = toset([
-      "AllMetrics",
-    ])
-    content {
-      category = metric.value
-      enabled  = true
-    }
+  metric {
+    category = "AllMetrics"
+    enabled  = true
   }
 }
 
