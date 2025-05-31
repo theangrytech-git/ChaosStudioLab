@@ -81,7 +81,6 @@ resource "azurerm_resource_group" "uks" {
 
 data "azurerm_resource_group" "uks" {
   name = azurerm_resource_group.uks.name
-  location = azurerm_resource_group.uks.location
 }
 
 # resource "azurerm_resource_group" "ukw" {
@@ -627,6 +626,12 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   }
 depends_on = [azurerm_key_vault_secret.vmpassword1]
 }
+
+data "azurerm_resources" "availability_zone_vmss" {
+  type                = "Microsoft.Compute/virtualMachineScaleSets"
+  resource_group_name = data.azurerm_resource_group.uks.name
+}
+
 
 /*******************************************************************************
                          CREATE VIRTUAL MACHINES
@@ -1305,17 +1310,19 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
 
   public_network_access_enabled      = false
   minimum_tls_version                = "1.2"
-  local_authentication_enabled        = false
 
   identity {
     type = "SystemAssigned"
   }
+}
 
-  encryption {
-    key_vault_key_id = azurerm_key_vault_key.kv1.id
-    key_source       = "Microsoft.KeyVault"
-    require_infrastructure_encryption = true
-  }
+resource "azurerm_servicebus_namespace_customer_managed_key" "sb_cmk" {
+  name                 = azurerm_servicebus_namespace.cs_servicebus_ns.name
+  resource_group_name  = data.azurerm_resource_group.uks.name
+  namespace_name       = azurerm_servicebus_namespace.cs_servicebus_ns.name
+  key_vault_id         = azurerm_key_vault.kv1.id
+  key_name             = azurerm_key_vault_key.sb_key.name
+  key_version          = azurerm_key_vault_key.sb_key.version
 }
 
 resource "azurerm_servicebus_queue" "ingress" {
@@ -1370,7 +1377,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   }
 
   geo_location {
-    location          = azurerm_resource_group.rg.location
+    location          = azurerm_resource_group.uks.location
     failover_priority = 0
   }
 
@@ -1655,16 +1662,16 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
     for res in data.azurerm_resources.all_vms.resources :
     res.name => res
   }
-  location             = azurerm_resource_group.rg.location
+  location             = azurerm_resource_group.uks.location
   target_resource_id   = each.value.id
   target_type          = "Microsoft-VirtualMachine"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
-  for_each            = data.azurerm_virtual_machine_scale_set.availability_zone_vmss
-  location            = azurerm_resource_group.uks.location
-  target_resource_id  = each.value.id
-  target_type         = "Microsoft-VirtualMachineScaleSet"
+  for_each           = { for vmss in data.azurerm_resources.availability_zone_vmss.resources : vmss.name => vmss }
+  location           = data.azurerm_resource_group.uks.location
+  target_resource_id = each.value.id
+  target_type        = "Microsoft.Compute/virtualMachineScaleSets"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
