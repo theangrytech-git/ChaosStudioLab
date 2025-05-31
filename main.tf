@@ -1316,15 +1316,6 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
   }
 }
 
-resource "azurerm_servicebus_namespace_customer_managed_key" "sb_cmk" {
-  name                 = azurerm_servicebus_namespace.cs_servicebus_ns.name
-  resource_group_name  = data.azurerm_resource_group.uks.name
-  namespace_name       = azurerm_servicebus_namespace.cs_servicebus_ns.name
-  key_vault_id         = azurerm_key_vault.kv1.id
-  key_name             = azurerm_key_vault_key.sb_key.name
-  key_version          = azurerm_key_vault_key.sb_key.version
-}
-
 resource "azurerm_servicebus_queue" "ingress" {
   name         = "ingress_queue"
   namespace_id = azurerm_servicebus_namespace.cs_servicebus_ns.id
@@ -1354,7 +1345,7 @@ resource "azurerm_key_vault_key" "sb_key" {
 }
 
 resource "azurerm_role_assignment" "sb_kv_access" {
-  principal_id         = azurerm_servicebus_namespace.cs_servicebus_ns.identity.principal_id
+  principal_id         = azurerm_servicebus_namespace.cs_servicebus_ns.identity[0].principal_id
   role_definition_name = "Key Vault Crypto Service Encryption User"
   scope                = azurerm_key_vault.kv1.id
 }
@@ -1856,7 +1847,7 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex1" {
   metric {
     category = "AllMetrics"
   }
-  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging ]
 }
 
 /********************************************************************************
@@ -1975,7 +1966,7 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex2" {
   metric {
     category = "AllMetrics"
   }
-  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging ]
 }
 
 
