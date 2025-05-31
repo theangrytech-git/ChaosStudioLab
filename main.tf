@@ -15,7 +15,7 @@ Function Apps, App Service Plans, and some Chaos Studio experiments.
 Notes:
 Chaos Studio is only available in select regions:
 https://azure.microsoft.com/en-gb/explore/global-infrastructure/products-by-region/?products=chaos-studio#products-by-region_tab5
-My environment is only available in UK South/West - to use this environment,
+My environment is only available in UK South - to use this environment,
 please replace any references to UK West (UKW) to a region that you want to
 use that's supported by Chaos Studio, and then un-comment those sections.
 *******************************************************************************/
@@ -92,7 +92,7 @@ resource "azurerm_virtual_network" "uks-hub1" {
   name                = "vnet-${var.uks}-hub-01"
   location            = var.uks
   resource_group_name = azurerm_resource_group.uks.name
-  address_space       = [cidrsubnet("${var.ukscidr}", 2, 0)]
+  address_space       = [cidrsubnet(var.ukscidr, 2, 0)]
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
@@ -116,26 +116,27 @@ resource "azurerm_subnet" "uks-hub1-subnet" {
   name                 = "snethost-${var.uks}-vnet-hub-01"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
-  address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 0)]
+  address_prefixes     = [cidrsubnet(var.ukscidr, 5, 0)]
   service_endpoints = ["Microsoft.KeyVault"]
 }
 resource "azurerm_subnet" "uks-hub1-subnetlb" {
   name                 = "snetlb-${var.uks}-vnet-hub-01"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
-  address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 1)]
+  address_prefixes     = [cidrsubnet(var.ukscidr, 5, 1)]
 }
 resource "azurerm_subnet" "uks-hub1-subnetfw" {
   name                 = "AzureFirewallSubnet"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
-  address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 2)]
+  address_prefixes     = [cidrsubnet(var.ukscidr, 5, 2)]
 }
 resource "azurerm_subnet" "uks-hub1-subnetfwman" {
   name                 = "AzureFirewallManagementSubnet"
   resource_group_name  = azurerm_resource_group.uks.name
   virtual_network_name = azurerm_virtual_network.uks-hub1.name
-  address_prefixes     = [cidrsubnet("${var.ukscidr}", 5, 3)]
+  address_prefixes     = [cidrsubnet(var.ukscidr, 5, 3)]
+  # checkov:skip=CKV2_AZURE_31: NSG not required for AzureFirewallManagementSubnet
 }
 
 # resource "azurerm_subnet" "ukw-hub1-subnet" {
@@ -345,7 +346,7 @@ resource "azurerm_key_vault_secret" "vmpassword1" {
   expiration_date = local.expiration_date
 }
 
-resource "azurerm_key_vault_secret" "vmpassword2" {  
+resource "azurerm_key_vault_secret" "vmpassword2" {
   depends_on   = [azurerm_key_vault.kv1]
   name         = "vmpassword2"
   value        = random_password.vmpassword.result
@@ -1284,62 +1285,473 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
 /*******************************************************************************
 *******************************************************************************/
 
+/*******************************************************************************
+                      REGISTER AZURE CHAOS PROVIDER
+*******************************************************************************/
+
+resource "null_resource" "register_chaos_provider" {
+  provisioner "local-exec" {
+    command = "az provider register --namespace Microsoft.Chaos"
+  }
+
+  # Ensure this runs only once by using a trigger
+    triggers = {
+    always_run = "${timestamp()}"
+  }
+}
+
+/********************************************************************************
+                            CREATE SERVICE PRINCIPAL
+********************************************************************************/
+resource "azuread_application" "cs_app" {
+  display_name = "chaos-studio-sp"
+}
+
+resource "azuread_service_principal" "cs_sp" {
+  client_id = azuread_application.cs_app.client_id
+}
+
+resource "azuread_service_principal_password" "cs_sp_pw" {
+  service_principal_id = azuread_service_principal.cs_sp.id
+  end_date             = local.expiration_date
+}
+
+output "client_id" {
+  value = azuread_service_principal.cs_sp.client_id
+}
+output "client_secret" {
+  value = azuread_service_principal_password.cs_sp_pw.value
+  sensitive = true
+}
+
+/********************************************************************************
+                           SERVICE PRINCIPAL ROLES
+********************************************************************************/
+resource "azurerm_role_assignment" "chaos_contributor_sp" {
+  principal_id   = azuread_service_principal.cs_sp.object_id
+  role_definition_name = "Chaos Studio Experiment Contributor"
+  scope = azurerm_resource_group.uks.id
+}
+
 /********************************************************************************
                  ADD AGENT-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-# resource "azurerm_chaos_studio_target" "uks_vmsa_ab" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-#   target_type = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "tgt-uks_vmsa" {
+  count               = var.servercounta
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsa[count.index].id
+  target_type         = "Microsoft-VirtualMachine"
+}
 
-# resource "azurerm_chaos_studio_target" "uks_vmsb_ab" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
-#   target_type = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "tgt-uks_vmsb" {
+  count               = var.servercounta
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_windows_virtual_machine.uks-vmsb[count.index].id
+  target_type         = "Microsoft-VirtualMachine"
+}
 
-# resource "azurerm_chaos_studio_target" "uks_vmssa_ab" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
-#   target_type = "Microsoft-Agent"
-# }
+resource "azurerm_chaos_studio_target" "tgt_uks_vmss" {
+  count               = var.vmsscounta
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_windows_virtual_machine_scale_set.uks-vmssa[count.index].id
+  target_type         = "Microsoft-VirtualMachineScaleSet"
+}
 
 /********************************************************************************
                  ADD SERVICE-BASED TARGETS TO CHAOS STUDIO
 ********************************************************************************/
-# resource "azurerm_chaos_studio_target" "uks_vmsa_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsa[0].id
-#   target_type = "Microsoft-VirtualMachine"
+resource "azurerm_chaos_studio_target" "tgt-key_vault_target" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_key_vault.kv1.id
+  target_type         = "Microsoft-KeyVault"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-app_service_target" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_linux_function_app.uks-fa.id
+  target_type         = "Microsoft-AppService"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-servicebus" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_servicebus_namespace.cs_servicebus_ns.id
+  target_type         = "Microsoft.ServiceBus"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-cosmosdb" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_cosmosdb_account.cs_cosmosdb.id
+  target_type         = "Microsoft.DocumentDB"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-eventhub" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_eventhub_namespace.cs_eventhub_ns.id
+  target_type         = "Microsoft.EventHub"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-vms" {
+  for_each            = data.azurerm_virtual_machine.availability_zone_vms
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = each.value.id
+  target_type         = "Microsoft-VirtualMachine"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-vmss" {
+  for_each            = data.azurerm_virtual_machine_scale_set.availability_zone_vmss
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = each.value.id
+  target_type         = "Microsoft-VirtualMachineScaleSet"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.chaos_exp_logs.id
+  target_type         = "Microsoft.Storage"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-uks-sa1" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.uks-sa1.id
+  target_type         = "Microsoft.Storage"
+}
+
+resource "azurerm_chaos_studio_target" "tgt-uks-vm1" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_storage_account.uks-vm1.id
+  target_type         = "Microsoft.Storage"
+}
+
+# resource "azurerm_chaos_studio_target" "tgt-sqldb" {
+#   location            = azurerm_resource_group.uks.location
+#   target_resource_id  = azurerm_mssql_database.sqldb.id
+#   target_type         = "Microsoft.Sql"
 # }
 
-# resource "azurerm_chaos_studio_target" "uks_vmsb_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine.uks-vmsb[0].id
-#   target_type = "Microsoft-VirtualMachine"
+/********************************************************************************
+                     ADD CHAOS STUDIO CAPABILITIES
+********************************************************************************/
+
+resource "azurerm_chaos_studio_capability" "cap_vm_shutdown" {
+  for_each                = azurerm_chaos_studio_target.tgt-vms
+  capability_type        = "Shutdown-1.0"
+  chaos_studio_target_id = each.value.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_vm_redeploy" {
+  for_each                = azurerm_chaos_studio_target.tgt-vms
+  capability_type        = "Redeploy-1.0"
+  chaos_studio_target_id = each.value.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_vmss_shutdown" {
+  for_each                = azurerm_chaos_studio_target.tgt-vmss
+  capability_type        = "Shutdown-1.0"
+  chaos_studio_target_id = each.value.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
+  for_each                = azurerm_chaos_studio_target.tgt-vmss
+  capability_type        = "Shutdown-2.0"
+  chaos_studio_target_id = each.value.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_servicebus_latency" {
+  capability_type        = "LatencyInjection-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-servicebus.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
+  capability_type        = "Failover-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-cosmosdb.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_eventhub_throttle" {
+  capability_type        = "Throttling-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-eventhub.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_storage_unavailable" {
+  capability_type        = "StorageUnavailable-1.0"
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-azurestorage.id
+}
+
+# resource "azurerm_chaos_studio_capability" "cap_sqldb_failover" {
+#   capability_type        = "Failover-1.0"
+#   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-sqldb.id
 # }
 
-# resource "azurerm_chaos_studio_target" "uks_vmssa_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_windows_virtual_machine_scale_set.uks-vmssa[0].id
-#   target_type = "Microsoft-VirtualMachineScaleSet"
-# }
+/********************************************************************************
+                     ADD CHAOS STUDIO EXPERIMENTS SCENARIOS
+********************************************************************************/
 
-# resource "azurerm_chaos_studio_target" "uks_kv1_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_key_vault.kv1.id
-#   target_type = "Microsoft-KeyVault"
-# }
+/********************************************************************************
+Notes:
+This entire section will be used to add in Real World scenarions based off PIR's
+from Microsoft.
 
-# resource "azurerm_chaos_studio_target" "uks_nsg1_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_network_security_group.uks-nsg1.id
-#   target_type = "Microsoft-NetworkSecurityGroup"
-# }
+********************************************************************************/
 
-# resource "azurerm_chaos_studio_target" "uks_fa1_sd" {
-#   location = azurerm_resource_group.uks.location
-#   target_resource_id = azurerm_linux_function_app.uks-fa.id
-#   target_type = "	Microsoft-AppService"
-# }
+
+/********************************************************************************
+Notes:
+This is going to replicate an Azure VM Disruption event from PIR 2LZ0-3DG,
+dated 16-SEPT-23.
+
+A power issue disrupted the scale units within a single Availability Zone within
+East US, causing compute nodes to become unhealthy. While a majority rebooted
+successfully, a subset did not. This led to failures and timeouts for Azure SQL
+Databases, impacting several services including Virtual Machines, SQL DBs, and
+Event Hubs.
+********************************************************************************/
+
+resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
+  name                = "pir-2lz0-3dg"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  selectors {
+    name                    = "Selector1"
+    chaos_studio_target_ids = concat(
+      [azurerm_chaos_studio_target.tgt-servicebus.id],
+      [azurerm_chaos_studio_target.tgt-cosmosdb.id],
+      [azurerm_chaos_studio_target.tgt-eventhub.id],
+      values(azurerm_chaos_studio_target.tgt-vms)[*].id,
+      values(azurerm_chaos_studio_target.tgt-vmss)[*].id
+    )
+  }
+
+  steps {
+    name = "VMDisruptionStep"
+    branch {
+      name = "Branch1"
+      actions {
+        urn           = join("",values(azurerm_chaos_studio_capability.cap_vm_shutdown)[*].urn)
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+      actions {
+        urn = join("", values(azurerm_chaos_studio_capability.cap_vmss_shutdown)[*].urn)
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+    }
+  }
+
+  steps {
+    name = "ServiceDisruptionStep"
+    branch {
+      name = "Branch2"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex1" {
+  name                       = "pir-2lz03dg-chaos-experiment-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.pir_2lz0_3dg.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "ChaosEvents"
+  }
+
+  metric {
+    category = "AllMetrics"
+  }
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+}
+
+/********************************************************************************
+Notes:
+This is going to replicate an Azure Outage event from PIR 1K90-N_8
+dated 18-JUL-24.
+
+A misconfiguration in Azure's Central US region disrupted backend communication
+between compute and storage clusters, causing widespread service outages for
+Azure Storage, SQL Database, Cosmos DB, Teams, and other services.
+********************************************************************************/
+
+resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
+  name                = "pir-1k90-n8"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  selectors {
+    name                    = "Selector1"
+    chaos_studio_target_ids = concat(
+      [azurerm_chaos_studio_target.tgt-servicebus.id],
+      [azurerm_chaos_studio_target.tgt-cosmosdb.id],
+      [azurerm_chaos_studio_target.tgt-eventhub.id],
+      [azurerm_chaos_studio_target.tgt-azurestorage.id],
+      # [azurerm_chaos_studio_target.tgt-sqldb.id],  # Uncomment when needed
+      values(azurerm_chaos_studio_target.tgt-vms)[*].id,
+      values(azurerm_chaos_studio_target.tgt-vmss)[*].id
+    )
+  }
+
+  steps {
+    name = "ComputeAndStorageDisruption"
+    branch {
+      name = "Branch1"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_storage_unavailable.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_cosmosdb_failover.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
+
+  steps {
+    name = "ServiceDisruption"
+    branch {
+      name = "Branch2"
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+    }
+  }
+
+  steps {
+    name = "VMDisruption"
+    branch {
+      name = "Branch3"
+      actions {
+        urn           = join("",values(azurerm_chaos_studio_capability.cap_vm_shutdown)[*].urn)
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+      actions {
+        urn = join("", values(azurerm_chaos_studio_capability.cap_vmss_shutdown)[*].urn)
+        selector_name = "Selector1"
+        parameters = {
+          abruptShutdown = "false"
+        }
+        action_type = "continuous"
+        duration    = "PT15M"
+      }
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex2" {
+  name                       = "pir-1k90n8-chaos-experiment-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.pir_1k90_n8.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "ChaosEvents"
+  }
+
+  metric {
+    category = "AllMetrics"
+  }
+  depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging, azurerm_monitor_diagnostic_setting.chaos_exp_diag ]
+}
+
+
+/*******************************************************************************
+                    CREATE CHAOS STUDIO LOGGING AND METRICS
+*******************************************************************************/
+resource "azurerm_storage_account" "chaos_exp_logs" {
+  name                     = "ukschaosstoragelogs"
+  resource_group_name       = azurerm_resource_group.uks.name
+  location                 = azurerm_resource_group.uks.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+resource "azurerm_log_analytics_workspace" "chaos_logging" {
+  name                = "uks-chaos-logs"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = azurerm_resource_group.uks.location
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_exp_diag" {
+  name                       = "chaos-experiment-diagnostics"
+  target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "ChaosEvents"
+  }
+}
+
+/********************************************************************************
+                     ADD CHAOS STUDIO EXPERIMENTS (UK South Outages)
+********************************************************************************/
+
+/********************************************************************************
+Notes:
+This section will be used to create smaller issues based within UK South and
+Global Resources designed to test failovers and outages. This will include things
+like AAD outages, App Service Plan and VM Resource failures, Zonal outages, etc.
+
+I will need to be able to gather resources dynamically, and create scenarios
+that will be randomised (ie random availability zone failures, VM failures, etc)
+so that no one scenario will be the same. This will be created within Azure and
+can be extracted via ARM template for future use if needed.
+
+********************************************************************************/
+#
