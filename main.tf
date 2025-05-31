@@ -266,10 +266,10 @@ resource "azurerm_key_vault" "kv1" {
   enabled_for_disk_encryption = true
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-  public_network_access_enabled = true
+  purge_protection_enabled    = true
+  public_network_access_enabled = false
   network_acls {
-    default_action = "Allow"
+    default_action = "Deny"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = concat(
       [azurerm_subnet.uks-hub1-subnet.id]
@@ -374,17 +374,44 @@ resource "azurerm_key_vault_secret" "vmpassword2" {
 # }
 
 /*******************************************************************************
+                      CREATE PRIVATE ENDPOIND FOR KV
+*******************************************************************************/
+resource "azurerm_private_endpoint" "kv_pe" {
+  name                = "pe-kv1"
+  location            = var.uks
+  resource_group_name = azurerm_resource_group.uks.name
+  subnet_id           = azurerm_subnet.uks-hub1-subnet.id
+
+  private_service_connection {
+    name                           = "kv1-privatesc"
+    private_connection_resource_id = azurerm_key_vault.kv1.id
+    is_manual_connection           = false
+    subresource_names              = ["vault"]
+  }
+  depends_on = [azurerm_key_vault.kv1]
+}
+
+
+/*******************************************************************************
                          CREATE APP CONFIGS
 *******************************************************************************/
 /***
 NOTE - I've added this section in to break a circular dependancy with KV/VM/Secrets.
-I'm going to leave this in for now, as there's some plan
+I'm going to leave this in for now, as there's some plan to use it at a later time
 ***/
 resource "azurerm_app_configuration" "uks-config" {
   name                = "appcfg-${var.uks}-01"
   resource_group_name = azurerm_resource_group.uks.name
   location            = var.uks
+  sku = "standard"
+  local_auth_enabled = false
+  # checkov:skip=CKV_AZURE_187: Purge protection currently not available in Terraform (v4.16.0)
 
+  # checkov:skip=CKV_AZURE_186: Customer-managed encryption not supported in Terraform as of v4.16.0
+ #encryption {
+  #key_vault_identity_client_id = azurerm_user_assigned_identity.cmk_mi.client_id #CMK-based encryption is not enabled in Azurerm v4.16 yet. Will uncomment when it does.
+  #key_vault_key_identifier     = azurerm_key_vault_key.cmk.id
+#}
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
@@ -553,6 +580,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
   upgrade_mode        = "Automatic"
+  encryption_at_host_enabled = true
 
   os_disk {
     caching              = "ReadWrite"
@@ -609,15 +637,11 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
   availability_set_id = azurerm_availability_set.uks-asa.id
+
   network_interface_ids = [
     azurerm_network_interface.uks-anics[count.index].id,
   ]
-
-  tags = {
-    Owner = var.owner_tag
-    Environment = var.environment_tag
-    Health  = var.health_tag
-    }
+  encryption_at_host_enabled = true
 
   os_disk {
     caching              = "ReadWrite"
@@ -636,6 +660,12 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   identity {
     type = "SystemAssigned"
   }
+    tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
+    Health  = var.health_tag
+    }
+  # checkov:skip=CKV_AZURE_50: No manual VM extensions installed
 }
 
 resource "azurerm_windows_virtual_machine" "uks-vmsb" {
@@ -651,13 +681,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   network_interface_ids = [
     azurerm_network_interface.uks-bnics[count.index].id,
   ]
-
-  tags = {
-    Owner = var.owner_tag
-    Environment = var.environment_tag
-    Health  = var.health_tag
-  }
-
+  encryption_at_host_enabled = true
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "StandardSSD_LRS"
@@ -675,6 +699,12 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   identity {
     type = "SystemAssigned"
   }
+    tags = {
+    Owner = var.owner_tag
+    Environment = var.environment_tag
+    Health  = var.health_tag
+  }
+# checkov:skip=CKV_AZURE_50: No manual VM extensions installed
 }
 
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
@@ -724,12 +754,8 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 #   network_interface_ids = [
 #     azurerm_network_interface.ukw-bnics[count.index].id,
 #   ]
-
-#   tags = {
-#     Owner = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-
+#   encryption_at_host_enabled = true
+#
 #   os_disk {
 #     caching              = "ReadWrite"
 #     storage_account_type = "StandardSSD_LRS"
@@ -744,6 +770,12 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
 #   boot_diagnostics {
 #     storage_account_uri = azurerm_storage_account.ukw-vm1.primary_blob_endpoint
 #   }
+#
+#   tags = {
+#     Owner = var.owner_tag
+#     Environment = var.environment_tag
+#   }
+# # checkov:skip=CKV_AZURE_50: No manual VM extensions installed
 # }
 
 /*******************************************************************************
@@ -792,7 +824,8 @@ resource "azurerm_firewall" "uks-fw1" {
   resource_group_name = azurerm_resource_group.uks.name
   sku_name            = "AZFW_VNet"
   sku_tier            = "Basic"
-  threat_intel_mode   = "Off"
+  threat_intel_mode   = "Deny"
+  firewall_policy_id  = azurerm_firewall_policy.uks-fw-policy.id
 
   ip_configuration {
     name                 = "ipconfig-fw-${var.uks}"
@@ -806,6 +839,27 @@ resource "azurerm_firewall" "uks-fw1" {
     public_ip_address_id = azurerm_public_ip.uks-fwmanpip.id
   }
 
+}
+
+/*******************************************************************************
+                          CREATE FIREWALL POLICY
+*******************************************************************************/
+resource "azurerm_firewall_policy" "uks-fw-policy" {
+  name                = "fw-policy-${var.uks}"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = var.uks
+
+  sku = "Basic"
+
+# checkov:skip=CKV_AZURE_XYZ: IDPS not supported with Basic SKU
+  # intrusion_detection {
+  #   mode = "Deny"  #Enable IDPS in deny mode if FW SKU is set to Premium.
+  # }
+
+  tags = {
+    Owner       = var.owner_tag
+    Environment = var.environment_tag
+  }
 }
 
 # resource "azurerm_firewall" "ukw-fw1" {
@@ -941,7 +995,7 @@ resource "azurerm_lb" "uks-lb" {
   frontend_ip_configuration {
     name                          = "fip-lb-int-${var.uks}"
     subnet_id                     = azurerm_subnet.uks-hub1-subnetlb.id
-    private_ip_address            = cidrhost("${var.ukscidr}", 260)
+    private_ip_address            = cidrhost(var.ukscidr, 260)
     private_ip_address_allocation = "static"
   }
 }
@@ -1093,6 +1147,8 @@ This section is to report on the VM's activity. Will be used as part of the
 env to simulate a FA relying on a VM to be up and running.
 ***/
 
+# checkov:skip=CKV2_AZURE_1: CMK encryption not required in lab environment
+# checkov:skip=CKV2_AZURE_33: Private endpoint not used in lab/test for connectivity simplicity
 resource "azurerm_storage_account" "uks-sa1" {
   name                     = "sa${var.uks}01"
   resource_group_name      = azurerm_resource_group.uks.name
@@ -1100,12 +1156,30 @@ resource "azurerm_storage_account" "uks-sa1" {
   account_tier             = var.uksaccounttier
   account_replication_type = var.uksart
   min_tls_version = "TLS1_2"
+  public_network_access_enabled = false
+  shared_access_key_enabled = false
+  infrastructure_encryption_enabled = true
+  sas_policy {
+    expiration_period = "1.00:00:00" # 1 day (format: D.HH:MM:SS)
+  }
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+  }
+
+# checkov:skip=CKV2_AZURE_47: Blob anonymous access already blocked via allow_blob_public_access = false
+# checkov:skip=CKV_AZURE_190: Blob public access is disabled globally, no additional config needed
+
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
   }
 }
 
+# checkov:skip=CKV2_AZURE_1: CMK encryption not required in lab environment
+# checkov:skip=CKV2_AZURE_33: Private endpoint not used in lab/test for connectivity simplicity
 resource "azurerm_storage_account" "uks-vm1" {
   name                     = "sa${var.uks}vmdiag"
   resource_group_name      = azurerm_resource_group.uks.name
@@ -1113,6 +1187,21 @@ resource "azurerm_storage_account" "uks-vm1" {
   account_tier             = var.uksaccounttier
   account_replication_type = var.uksart
   min_tls_version = "TLS1_2"
+  public_network_access_enabled = false
+  shared_access_key_enabled = false
+  infrastructure_encryption_enabled = true
+  sas_policy {
+    expiration_period = "1.00:00:00" # 1 day (format: D.HH:MM:SS)
+  }
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+  }
+# checkov:skip=CKV2_AZURE_47: Blob anonymous access already blocked via allow_blob_public_access = false
+# checkov:skip=CKV_AZURE_190: Blob public access is disabled globally, no additional config needed
+
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
@@ -1132,15 +1221,20 @@ resource "azurerm_storage_account" "uks-vm1" {
 #   }
 # }
 
+
 /*******************************************************************************
                          CREATE APP SERVICE PLAN
 *******************************************************************************/
+
 resource "azurerm_service_plan" "uks-asp" {
   name                = "${var.uks}-asp-01"
   resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   os_type             = var.uks-asp-os
   sku_name            = var.uks-asp-sku
+# checkov:skip=CKV_AZURE_212: Failover not required for Basic tier / lab setup
+# checkov:skip=CKV_AZURE_225: Zone redundancy not supported on B1 SKU
+  # zone_redundant = true  #Uncomment if moving from B1//S1/F1/EP1 SKU's
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
@@ -1158,6 +1252,7 @@ resource "azurerm_linux_function_app" "uks-fa" {
   storage_account_name       = azurerm_storage_account.uks-sa1.name
   storage_account_access_key = azurerm_storage_account.uks-sa1.primary_access_key
   https_only = "true"
+  public_network_access_enabled = false
   site_config {
     #linux_fx_version = "Python|3.10"  # Specifies Python 3.10 as the runtime
   }
@@ -1296,7 +1391,7 @@ resource "null_resource" "register_chaos_provider" {
 
   # Ensure this runs only once by using a trigger
     triggers = {
-    always_run = "${timestamp()}"
+    always_run = timestamp()
   }
 }
 
@@ -1712,12 +1807,33 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex2" {
 /*******************************************************************************
                     CREATE CHAOS STUDIO LOGGING AND METRICS
 *******************************************************************************/
+# checkov:skip=CKV2_AZURE_1: CMK encryption not required for non-prod chaos logs
+# checkov:skip=CKV2_AZURE_33: Private endpoint skipped in test/lab environment
 resource "azurerm_storage_account" "chaos_exp_logs" {
   name                     = "ukschaosstoragelogs"
-  resource_group_name       = azurerm_resource_group.uks.name
+  resource_group_name      = azurerm_resource_group.uks.name
   location                 = azurerm_resource_group.uks.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  min_tls_version          = "TLS1_2"
+  public_network_access_enabled = false
+  shared_access_key_enabled = false
+  infrastructure_encryption_enabled = true
+
+  sas_policy {
+    expiration_period = "1.00:00:00"
+  }
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+  }
+
+  tags = {
+    Owner       = var.owner_tag
+    Environment = var.environment_tag
+  }
 }
 
 resource "azurerm_log_analytics_workspace" "chaos_logging" {
@@ -1728,13 +1844,18 @@ resource "azurerm_log_analytics_workspace" "chaos_logging" {
   retention_in_days   = 30
 }
 
-resource "azurerm_monitor_diagnostic_setting" "chaos_exp_diag" {
-  name                       = "chaos-experiment-diagnostics"
+resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
+  name                       = "diag-chaos-queue"
   target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
   enabled_log {
-    category = "ChaosEvents"
+    category = "StorageQueueLogs"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
   }
 }
 

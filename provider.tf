@@ -8,9 +8,15 @@ terraform {
       source  = "hashicorp/random"
       version = ">= 3.6.2"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
+
+  backend "azurerm" {}
 }
-# Configuration options
+
 provider "azurerm" {
   features {
     key_vault {
@@ -20,15 +26,12 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
-  use_cli          = true
-  use_msi          = false
+
+  use_cli         = true
+  use_msi         = false
   subscription_id = var.subscription_id
 }
 
 provider "random" {
-  # Configuration options
-}
-
-terraform {
-  backend "azurerm" {}
+  # No additional configuration required
 }
