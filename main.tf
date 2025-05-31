@@ -1338,8 +1338,6 @@ resource "azurerm_key_vault_key" "sb_key" {
   expiration_date = local.expiration_date
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_role_assignment" "sb_kv_access" {
   principal_id         = azurerm_servicebus_namespace.cs_servicebus_ns.identity.principal_id
   role_definition_name = "Key Vault Crypto Service Encryption User"
@@ -1358,7 +1356,6 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
 
   public_network_access_enabled  = false
   is_virtual_network_filter_enabled = true
-  disable_key_based_metadata_write_access = true
 
   consistency_policy {
     consistency_level = "Session"
