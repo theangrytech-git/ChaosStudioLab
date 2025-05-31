@@ -843,7 +843,7 @@ resource "azurerm_firewall" "uks-fw1" {
   sku_name            = "AZFW_VNet"
   sku_tier            = "Basic"
   threat_intel_mode   = "Deny"
-  firewall_policy_id  = azurerm_firewall_policy.uks-fw-policy.id
+  #firewall_policy_id  = azurerm_firewall_policy.uks-fw-policy.id # Commented out because of azurerm_firewall_network_rule_collection/nat_rule_collection.
 
   ip_configuration {
     name                 = "ipconfig-fw-${var.uks}"
@@ -862,23 +862,24 @@ resource "azurerm_firewall" "uks-fw1" {
 /*******************************************************************************
                           CREATE FIREWALL POLICY
 *******************************************************************************/
-resource "azurerm_firewall_policy" "uks-fw-policy" {
-  name                = "fw-policy-${var.uks}"
-  resource_group_name = azurerm_resource_group.uks.name
-  location            = var.uks
+# Commented out as you can't have bith Firewall_Policy_ID and azurerm_firewall_network_rule_collection/nat_rule_collection
+# resource "azurerm_firewall_policy" "uks-fw-policy" {
+#   name                = "fw-policy-${var.uks}"
+#   resource_group_name = azurerm_resource_group.uks.name
+#   location            = var.uks
 
-  sku = "Basic"
+#   sku = "Basic"
 
-# checkov:skip=CKV_AZURE_XYZ: IDPS not supported with Basic SKU
-  # intrusion_detection {
-  #   mode = "Deny"  #Enable IDPS in deny mode if FW SKU is set to Premium.
-  # }
+# # checkov:skip=CKV_AZURE_XYZ: IDPS not supported with Basic SKU
+#   # intrusion_detection {
+#   #   mode = "Deny"  #Enable IDPS in deny mode if FW SKU is set to Premium.
+#   # }
 
-  tags = {
-    Owner       = var.owner_tag
-    Environment = var.environment_tag
-  }
-}
+#   tags = {
+#     Owner       = var.owner_tag
+#     Environment = var.environment_tag
+#   }
+# }
 
 # resource "azurerm_firewall" "ukw-fw1" {
 #   name                = "fw-${var.ukw}-01"
@@ -1186,6 +1187,9 @@ resource "azurerm_storage_account" "uks-sa1" {
       days = 7
     }
   }
+  identity {
+    type = "SystemAssigned"
+  }
 
 # checkov:skip=CKV2_AZURE_47: Blob anonymous access already blocked via allow_blob_public_access = false
 # checkov:skip=CKV_AZURE_190: Blob public access is disabled globally, no additional config needed
@@ -1216,6 +1220,9 @@ resource "azurerm_storage_account" "uks-vm1" {
     delete_retention_policy {
       days = 7
     }
+  }
+  identity {
+    type = "SystemAssigned"
   }
 # checkov:skip=CKV2_AZURE_47: Blob anonymous access already blocked via allow_blob_public_access = false
 # checkov:skip=CKV_AZURE_190: Blob public access is disabled globally, no additional config needed
@@ -1310,10 +1317,10 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
 
   public_network_access_enabled      = false
   minimum_tls_version                = "1.2"
-
-  identity {
-    type = "SystemAssigned"
-  }
+  principal_id = azurerm_servicebus_namespace.cs_servicebus_ns.identity[0].principal_id
+  # identity {
+  #   type = "SystemAssigned"
+  # }
 }
 
 resource "azurerm_servicebus_queue" "ingress" {
@@ -1547,16 +1554,22 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
                       REGISTER AZURE CHAOS PROVIDER
 *******************************************************************************/
 
-resource "null_resource" "register_chaos_provider" {
-  provisioner "local-exec" {
-    command = "az provider register --namespace Microsoft.Chaos"
-  }
-
-  # Ensure this runs only once by using a trigger
-    triggers = {
-    always_run = timestamp()
-  }
+resource "azurerm_provider_registration" "chaos" {
+  name = "Microsoft.Chaos"
 }
+
+# Commented out due ot issues with az login
+
+# resource "null_resource" "register_chaos_provider" {
+#   provisioner "local-exec" {
+#     command = "az provider register --namespace Microsoft.Chaos"
+#   }
+
+#   # Ensure this runs only once by using a trigger
+#     triggers = {
+#     always_run = timestamp()
+#   }
+# }
 
 /********************************************************************************
                             CREATE SERVICE PRINCIPAL
@@ -1633,7 +1646,7 @@ resource "azurerm_chaos_studio_target" "tgt-app_service_target" {
 resource "azurerm_chaos_studio_target" "tgt-servicebus" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_servicebus_namespace.cs_servicebus_ns.id
-  target_type         = "Microsoft.ServiceBus"
+  target_type         = "Microsoft-ServiceBus"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-cosmosdb" {
@@ -1645,7 +1658,7 @@ resource "azurerm_chaos_studio_target" "tgt-cosmosdb" {
 resource "azurerm_chaos_studio_target" "tgt-eventhub" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_eventhub_namespace.cs_eventhub_ns.id
-  target_type         = "Microsoft.EventHub"
+  target_type         = "Microsoft-EventHub"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vms" {
@@ -1995,7 +2008,9 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
       days = 7
     }
   }
-
+  identity {
+    type = "SystemAssigned"
+  }
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
