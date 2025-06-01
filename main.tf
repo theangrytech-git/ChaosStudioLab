@@ -1727,9 +1727,14 @@ resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
   chaos_studio_target_id = each.value.id
 }
 
-resource "azurerm_chaos_studio_capability" "cap_servicebus_latency" {
-  capability_type        = "LatencyInjection-1.0"
+resource "azurerm_chaos_studio_capability" "cap_servicebus_queue_state" {
+  capability_type        = "ChangeQueueState-1.0" #Latency isn't available for Sb - setting this will mimic queues being unavailable
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-servicebus.id
+}
+
+resource "azurerm_chaos_studio_capability" "cap_appsvc_latency" {
+  chaos_studio_target_id = azurerm_chaos_studio_target.tgt-appservice.id
+  capability_type         = "LatencyInjection-1.0"
 }
 
 resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
@@ -1738,7 +1743,7 @@ resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
 }
 
 resource "azurerm_chaos_studio_capability" "cap_eventhub_throttle" {
-  capability_type        = "Throttling-1.0"
+  capability_type        = "ChangeEventHubState-1.0"
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-eventhub.id
 }
 
@@ -1920,7 +1925,7 @@ resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
     branch {
       name = "Branch2"
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_queue_state.urn
         selector_name = "Selector1"
         parameters = {
           duration = "PT15M"
@@ -1928,7 +1933,15 @@ resource "azurerm_chaos_studio_experiment" "pir_1k90_n8" {
         action_type = "continuous"
       }
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_state.urn
+        selector_name = "Selector1"
+        parameters = {
+          duration = "PT15M"
+        }
+        action_type = "continuous"
+      }
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_appsvc_latency.urn
         selector_name = "Selector1"
         parameters = {
           duration = "PT15M"
@@ -1995,6 +2008,7 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   public_network_access_enabled = false
   shared_access_key_enabled = false
   infrastructure_encryption_enabled = true
+  allow_shared_key_access = true
 
   sas_policy {
     expiration_period = "1.00:00:00"
