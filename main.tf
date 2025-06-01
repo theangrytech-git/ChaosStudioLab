@@ -51,6 +51,12 @@ locals {
       "vm-${var.ukscode}-b-${i}" => "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_resource_group.uks.name}/providers/Microsoft.Compute/virtualMachines/vm-${var.ukscode}-b-${i}"
     }
   )
+  chaos_vmss_targets = merge(
+    {
+      for i in range(var.vmsscounta) :
+      "vmss-${var.ukscode}-a-${i}" => "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_resource_group.uks.name}/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-${var.ukscode}-a-${i}"
+    }
+  )
 }
 
 /*******************************************************************************
@@ -1663,7 +1669,7 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
-  for_each           = { for vmss in data.azurerm_resources.availability_zone_vmss.resources : vmss.name => vmss }
+  for_each = local.chaos_vmss_targets
   location           = data.azurerm_resource_group.uks.location
   target_resource_id = each.value.id
   target_type        = "Microsoft.Compute/virtualMachineScaleSets"
