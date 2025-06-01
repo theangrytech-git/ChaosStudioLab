@@ -1317,10 +1317,6 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
 
   public_network_access_enabled      = false
   minimum_tls_version                = "1.2"
-  principal_id = azurerm_servicebus_namespace.cs_servicebus_ns.identity[0].principal_id
-  # identity {
-  #   type = "SystemAssigned"
-  # }
 }
 
 resource "azurerm_servicebus_queue" "ingress" {
@@ -1554,22 +1550,7 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
                       REGISTER AZURE CHAOS PROVIDER
 *******************************************************************************/
 
-resource "azurerm_provider_registration" "chaos" {
-  name = "Microsoft.Chaos"
-}
-
-# Commented out due ot issues with az login
-
-# resource "null_resource" "register_chaos_provider" {
-#   provisioner "local-exec" {
-#     command = "az provider register --namespace Microsoft.Chaos"
-#   }
-
-#   # Ensure this runs only once by using a trigger
-#     triggers = {
-#     always_run = timestamp()
-#   }
-# }
+# This is handled in the ADO pipeline
 
 /********************************************************************************
                             CREATE SERVICE PRINCIPAL
