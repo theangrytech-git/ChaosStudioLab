@@ -639,7 +639,7 @@ depends_on = [azurerm_key_vault_secret.vmpassword1]
 
 data "azurerm_resources" "availability_zone_vmss" {
   type                = "Microsoft.Compute/virtualMachineScaleSets"
-  resource_group_name = data.azurerm_resource_group.uks.name
+  resource_group_name = azurerm_resource_group.uks.name
 }
 
 
@@ -1658,7 +1658,7 @@ resource "azurerm_chaos_studio_target" "tgt-eventhub" {
 resource "azurerm_chaos_studio_target" "tgt-vms" {
   for_each = local.chaos_vm_targets
   location             = azurerm_resource_group.uks.location
-  target_resource_id   = each.value.id
+  target_resource_id   = each.value
   target_type          = "Microsoft.Compute/virtualMachines"
 }
 
