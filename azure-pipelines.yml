@@ -68,7 +68,7 @@ stages:
               sleep 30
 
         - script: |
-            echo "Terraform Init using Service Principal"
+            echo "Terraform Init"
 
             export ARM_CLIENT_ID=$(servicePrincipalId)
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
@@ -80,7 +80,7 @@ stages:
               -backend-config="storage_account_name=$(tfStateStorage)" \
               -backend-config="container_name=$(tfStateContainer)" \
               -backend-config="key=$(tfStateKey)"
-          displayName: 'Terraform Init with SP Auth'
+          displayName: 'Terraform Init'
 
 - stage: Plan
   displayName: 'Terraform Plan'
@@ -107,7 +107,7 @@ stages:
           displayName: 'Get Agent Public IP'
 
         - script: |
-            echo "Terraform Plan using Service Principal"
+            echo "Terraform Plan"
             export ARM_CLIENT_ID=$(servicePrincipalId)
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
@@ -124,7 +124,7 @@ stages:
               -var="agent_ip=$(agent_ip)" \
               -var-file="env.tfvars" \
               -out=tfplan
-          displayName: 'Terraform Plan with SP Auth'
+          displayName: 'Terraform Plan'
 
         - script: |
             echo "Extracting predicted Key Vault name from Terraform plan..."
@@ -201,8 +201,34 @@ stages:
             echo "##vso[task.setvariable variable=agent_ip]$agent_ip"
           displayName: 'Get Agent Public IP'  
 
+        - task: AzureCLI@2
+          displayName: 'Ensure Microsoft.Chaos Provider is Registered'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              echo "Checking Chaos provider registration..."
+              state=$(az provider show --namespace Microsoft.Chaos --query "registrationState" -o tsv)
+              if [ "$state" != "Registered" ]; then
+              echo "Chaos provider not registered. Registering now..."
+              az provider register --namespace Microsoft.Chaos
+              echo "Waiting for Chaos provider to register..."
+              for i in {1..10}; do
+              sleep 10
+              state=$(az provider show --namespace Microsoft.Chaos --query "registrationState" -o tsv)
+              echo "Current state: $state"
+              if [ "$state" == "Registered" ]; then
+                echo "Chaos provider successfully registered."
+              break
+              fi
+              done
+              else
+                echo "Chaos provider is already registered."
+              fi
+
         - script: |
-            echo "Terraform Apply using Service Principal"
+            echo "Terraform Apply"
             export ARM_CLIENT_ID=$(servicePrincipalId)
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
@@ -216,7 +242,7 @@ stages:
 
             terraform apply \
               "$(Pipeline.Workspace)/terraformPlan/tfplan"
-          displayName: 'Terraform Apply with SP Auth'
+          displayName: 'Terraform Apply'
 
         - script: |
             echo "Waiting 30 seconds before locking down storage..."
