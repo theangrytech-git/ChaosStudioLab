@@ -1671,7 +1671,7 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
   for_each = local.chaos_vmss_targets
   location           = data.azurerm_resource_group.uks.location
-  target_resource_id = each.value.id
+  target_resource_id = each.value
   target_type        = "Microsoft.Compute/virtualMachineScaleSets"
 }
 
