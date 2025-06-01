@@ -41,6 +41,16 @@ locals {
     formatdate("YYYY-MM-DD'T'HH:mm:ssZ", timestamp()),
     "${local.days_to_hours}h"
   )
+  chaos_vm_targets = merge(
+    {
+      for i in range(var.servercounta) :
+      "vm-${var.ukscode}-a-${i}" => "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_resource_group.uks.name}/providers/Microsoft.Compute/virtualMachines/vm-${var.ukscode}-a-${i}"
+    },
+    {
+      for i in range(var.servercountb) :
+      "vm-${var.ukscode}-b-${i}" => "/subscriptions/${var.subscription_id}/resourceGroups/${azurerm_resource_group.uks.name}/providers/Microsoft.Compute/virtualMachines/vm-${var.ukscode}-b-${i}"
+    }
+  )
 }
 
 /*******************************************************************************
@@ -1317,6 +1327,9 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
 
   public_network_access_enabled      = false
   minimum_tls_version                = "1.2"
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 resource "azurerm_servicebus_queue" "ingress" {
@@ -1643,13 +1656,10 @@ resource "azurerm_chaos_studio_target" "tgt-eventhub" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vms" {
-  for_each = {
-    for res in data.azurerm_resources.all_vms.resources :
-    res.name => res
-  }
+  for_each = local.chaos_vm_targets
   location             = azurerm_resource_group.uks.location
   target_resource_id   = each.value.id
-  target_type          = "Microsoft-VirtualMachine"
+  target_type          = "Microsoft.Compute/virtualMachines"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
