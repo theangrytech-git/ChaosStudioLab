@@ -1553,6 +1553,24 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
   scope          = azurerm_resource_group.uks.id
 }
 
+resource "azurerm_role_assignment" "storage_blob_data_contributor_sauksouth01" {
+  scope                = azurerm_storage_account.sauksouth01.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_storage_account.sauksouth01.identity.principal_id
+}
+
+resource "azurerm_role_assignment" "storage_blob_data_contributor_sauksouthvmdiag" {
+  scope                = azurerm_storage_account.sauksouthvmdiag.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_storage_account.sauksouthvmdiag.identity.principal_id
+}
+
+resource "azurerm_role_assignment" "storage_blob_data_contributor_ukschaosstoragelogs" {
+  scope                = azurerm_storage_account.ukschaosstoragelogs.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_storage_account.ukschaosstoragelogs.identity.principal_id
+}
+
 # resource "azurerm_role_assignment" "storage_blob_data_reader2" {
 #   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
 #   role_definition_name = "Storage Account Contributor"
