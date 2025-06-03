@@ -1871,13 +1871,13 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex1" {
   depends_on = [ azurerm_storage_account.chaos_exp_logs, azurerm_log_analytics_workspace.chaos_logging ]
 }
 
-resource "azurerm_role_assignment" "chaos_diag_to_storage" {
+resource "azurerm_role_assignment" "chaos_diag_to_storage_1k90_n8" {
   scope                = azurerm_storage_account.chaos_exp_logs.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_chaos_studio_experiment.pir_1k90_n8.identity[0].principal_id
 }
 
-resource "azurerm_role_assignment" "chaos_diag_to_storage" {
+resource "azurerm_role_assignment" "chaos_diag_to_storage_2lz0_3dg" {
   scope                = azurerm_storage_account.chaos_exp_logs.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_chaos_studio_experiment.pir_2lz0_3dg.identity[0].principal_id
