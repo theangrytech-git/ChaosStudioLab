@@ -1748,7 +1748,7 @@ resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-cosmosdb.id
 }
 
-resource "azurerm_chaos_studio_capability" "cap_eventhub_throttle" {
+resource "azurerm_chaos_studio_capability" "cap_eventhub_state" {
   capability_type        = "ChangeEventHubState-1.0"
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-eventhub.id
 }
@@ -1845,7 +1845,7 @@ resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
         action_type = "continuous"
       }
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_eventhub_throttle.urn
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_state.urn
         selector_name = "Selector1"
         parameters = {
           duration = "PT15M"
