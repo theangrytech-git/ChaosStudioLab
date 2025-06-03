@@ -1553,22 +1553,22 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
   scope          = azurerm_resource_group.uks.id
 }
 
-resource "azurerm_role_assignment" "storage_blob_data_contributor_sauksouth01" {
-  scope                = azurerm_storage_account.sauksouth01.id
+resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-sa1" {
+  scope                = azurerm_storage_account.uks-sa1.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.sauksouth01.identity.principal_id
+  principal_id         = azurerm_storage_account.uks-sa1.identity.principal_id
 }
 
-resource "azurerm_role_assignment" "storage_blob_data_contributor_sauksouthvmdiag" {
-  scope                = azurerm_storage_account.sauksouthvmdiag.id
+resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-vm1" {
+  scope                = azurerm_storage_account.uks-vm1.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.sauksouthvmdiag.identity.principal_id
+  principal_id         = azurerm_storage_account.uks-vm1.identity.principal_id
 }
 
-resource "azurerm_role_assignment" "storage_blob_data_contributor_ukschaosstoragelogs" {
-  scope                = azurerm_storage_account.ukschaosstoragelogs.id
+resource "azurerm_role_assignment" "storage_blob_data_contributor_chaos_exp_logs" {
+  scope                = azurerm_storage_account.chaos_exp_logs.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.ukschaosstoragelogs.identity.principal_id
+  principal_id         = azurerm_storage_account.chaos_exp_logs.identity.principal_id
 }
 
 # resource "azurerm_role_assignment" "storage_blob_data_reader2" {
