@@ -1693,6 +1693,12 @@ resource "azurerm_chaos_studio_target" "tgt-uks-vm1" {
   target_type         = "Microsoft.Storage"
 }
 
+resource "azurerm_chaos_studio_target" "tgt-appservice" {
+  location            = azurerm_resource_group.uks.location
+  target_resource_id  = azurerm_linux_function_app.uks-fa.id
+  target_type         = "Microsoft-Web/sites"
+}
+
 # resource "azurerm_chaos_studio_target" "tgt-sqldb" {
 #   location            = azurerm_resource_group.uks.location
 #   target_resource_id  = azurerm_mssql_database.sqldb.id
@@ -1831,7 +1837,7 @@ resource "azurerm_chaos_studio_experiment" "pir_2lz0_3dg" {
     branch {
       name = "Branch2"
       actions {
-        urn           = azurerm_chaos_studio_capability.cap_servicebus_latency.urn
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_queue_state.urn
         selector_name = "Selector1"
         parameters = {
           duration = "PT15M"
@@ -2008,7 +2014,7 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   public_network_access_enabled = false
   shared_access_key_enabled = false
   infrastructure_encryption_enabled = true
-  allow_shared_key_access = true
+  #allow_shared_key_access = true #Not supported in Provider version
 
   sas_policy {
     expiration_period = "1.00:00:00"
