@@ -1556,19 +1556,19 @@ resource "azurerm_role_assignment" "storage_blob_data_reader" {
 resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-sa1" {
   scope                = azurerm_storage_account.uks-sa1.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.uks-sa1.identity.principal_id
+  principal_id         = azurerm_storage_account.uks-sa1.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-vm1" {
   scope                = azurerm_storage_account.uks-vm1.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.uks-vm1.identity.principal_id
+  principal_id         = azurerm_storage_account.uks-vm1.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "storage_blob_data_contributor_chaos_exp_logs" {
   scope                = azurerm_storage_account.chaos_exp_logs.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.chaos_exp_logs.identity.principal_id
+  principal_id         = azurerm_storage_account.chaos_exp_logs.identity[0].principal_id
 }
 
 # resource "azurerm_role_assignment" "storage_blob_data_reader2" {
