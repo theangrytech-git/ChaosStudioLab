@@ -18,7 +18,12 @@ terraform {
     }
   }
 
-  backend "azurerm" {}
+  backend "azurerm" {
+      resource_group_name  = "rg-uksouth-chaos-demo-01"
+      storage_account_name = "ukschaosstoragelogs"
+      container_name       = "tfstate"
+      key                  = "terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
