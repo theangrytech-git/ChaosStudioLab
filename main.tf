@@ -450,8 +450,7 @@ resource "azurerm_app_configuration_key" "ck1" {
   value = random_password.vmpassword.result
 
   depends_on = [
-    azurerm_role_assignment.appconf_dataowner
-  ]
+    azurerm_role_assignment.appconf_dataowner, azurerm_app_configuration.uks-config]
 }
 resource "azurerm_app_configuration_key" "ck2" {
   configuration_store_id = azurerm_app_configuration.uks-config.id
@@ -461,8 +460,7 @@ resource "azurerm_app_configuration_key" "ck2" {
   value    = random_password.vmpassword.result
 
   depends_on = [
-    azurerm_role_assignment.appconf_dataowner
-  ]
+    azurerm_role_assignment.appconf_dataowner, azurerm_app_configuration.uks-config]
 }
 
 resource "azurerm_role_assignment" "appconf_dataowner" {
