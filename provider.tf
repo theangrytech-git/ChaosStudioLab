@@ -19,9 +19,9 @@ terraform {
   }
 
   backend "azurerm" {
-      resource_group_name  = "rg-uksouth-chaos-demo-01"
-      storage_account_name = "ukschaosstoragelogs"
-      container_name       = "tfstate"
+      resource_group_name  = "tfstate"
+      storage_account_name = "mytfstaterepo"
+      container_name       = "cstfstate"
       key                  = "terraform.tfstate"
   }
 }
