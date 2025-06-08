@@ -2045,7 +2045,6 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   public_network_access_enabled = false
   shared_access_key_enabled = false
   infrastructure_encryption_enabled = true
-  #allow_shared_key_access = true #Not supported in Provider version
 
   sas_policy {
     expiration_period = "1.00:00:00"

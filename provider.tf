@@ -39,6 +39,7 @@ provider "azurerm" {
   use_cli         = true
   use_msi         = false
   subscription_id = var.subscription_id
+  use_oidc = true #Seeing issues with Auth for Storage Account, so using OIDC for now
 }
 
 provider "random" {
