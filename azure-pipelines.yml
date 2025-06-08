@@ -69,21 +69,12 @@ stages:
 
         - script: |
             echo "Terraform Init"
-            export ARM_USE_OIDC=true
 
-            echo "Verifying Azure OIDC token and access..."
-            export ARM_USE_OIDC=true
+            export ARM_CLIENT_ID=$(servicePrincipalId)
+            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+            export ARM_TENANT_ID=$(tenantId)
+            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
 
-            echo "Listing Azure subscriptions to confirm access..."
-            az account list --output table
-
-            echo "Showing current account..."
-            az account show --output json
-
-            echo "Listing Resource Groups in subscription..."
-            az group list --output table
-            displayName: 'Verify OIDC Auth with Azure CLI'
-            
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
               -backend-config="storage_account_name=$(tfStateStorage)" \
@@ -117,7 +108,10 @@ stages:
 
         - script: |
             echo "Terraform Plan"
-            export ARM_USE_OIDC=true
+            export ARM_CLIENT_ID=$(servicePrincipalId)
+            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+            export ARM_TENANT_ID=$(tenantId)
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
@@ -234,7 +228,11 @@ stages:
               fi
 
         - script: |
-            export ARM_USE_OIDC=true
+            echo "Terraform Apply"
+            export ARM_CLIENT_ID=$(servicePrincipalId)
+            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
+            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+            export ARM_TENANT_ID=$(tenantId)
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
