@@ -444,7 +444,7 @@ resource "azurerm_app_configuration" "uks-config" {
 
 resource "azurerm_app_configuration_key" "ck1" {
   configuration_store_id = azurerm_app_configuration.uks-config.id
-  key                    = "key1"
+  key                    = "key1${random_string.random.result}"
   type                   = "kv"
   label                  = "appsecret1"
   value = random_password.vmpassword.result
@@ -454,7 +454,7 @@ resource "azurerm_app_configuration_key" "ck1" {
 }
 resource "azurerm_app_configuration_key" "ck2" {
   configuration_store_id = azurerm_app_configuration.uks-config.id
-  key                    = "key2"
+  key                    = "key2${random_string.random.result}"
   type                   = "kv"
   label                  = "appsecret2"
   value    = random_password.vmpassword.result
@@ -1190,7 +1190,7 @@ resource "azurerm_storage_account" "uks-sa1" {
   account_replication_type = var.uksart
   min_tls_version = "TLS1_2"
   public_network_access_enabled = false
-  shared_access_key_enabled = false
+  shared_access_key_enabled = true
   infrastructure_encryption_enabled = true
   sas_policy {
     expiration_period = "1.00:00:00" # 1 day (format: D.HH:MM:SS)
@@ -1224,7 +1224,7 @@ resource "azurerm_storage_account" "uks-vm1" {
   account_replication_type = var.uksart
   min_tls_version = "TLS1_2"
   public_network_access_enabled = false
-  shared_access_key_enabled = false
+  shared_access_key_enabled = true
   infrastructure_encryption_enabled = true
   sas_policy {
     expiration_period = "1.00:00:00" # 1 day (format: D.HH:MM:SS)
@@ -1691,7 +1691,7 @@ resource "azurerm_chaos_studio_target" "tgt-vmss" {
   for_each = local.chaos_vmss_targets
   location           = data.azurerm_resource_group.uks.location
   target_resource_id = each.value
-  target_type        = "Microsoft.Compute/virtualMachineScaleSets"
+  target_type        = "Microsoft-VirtualMachineScaleSet"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
@@ -2043,7 +2043,7 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   account_replication_type = "LRS"
   min_tls_version          = "TLS1_2"
   public_network_access_enabled = false
-  shared_access_key_enabled = false
+  shared_access_key_enabled = true
   infrastructure_encryption_enabled = true
 
   sas_policy {
