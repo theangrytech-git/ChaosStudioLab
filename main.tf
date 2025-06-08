@@ -1214,6 +1214,22 @@ resource "azurerm_storage_account" "uks-sa1" {
   }
 }
 
+resource "null_resource" "wait_for_uks-sa1" {
+  depends_on = [azurerm_storage_account.uks-sa1]
+
+  provisioner "local-exec" {
+    command = <<EOT
+echo "Waiting for blob service of storage account uks-sa1..."
+for i in {1..10}; do
+  az storage blob service-properties show \
+    --account-name sa${var.uks}01\
+    --auth-mode login && break || sleep 10
+done
+EOT
+    interpreter = ["bash", "-c"]
+  }
+}
+
 # checkov:skip=CKV2_AZURE_1: CMK encryption not required in lab environment
 # checkov:skip=CKV2_AZURE_33: Private endpoint not used in lab/test for connectivity simplicity
 resource "azurerm_storage_account" "uks-vm1" {
@@ -1244,6 +1260,22 @@ resource "azurerm_storage_account" "uks-vm1" {
   tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
+  }
+}
+
+resource "null_resource" "wait_for_uks-vm1" {
+  depends_on = [azurerm_storage_account.uks-vm1]
+
+  provisioner "local-exec" {
+    command = <<EOT
+echo "Waiting for blob service of storage account uks-sa1..."
+for i in {1..10}; do
+  az storage blob service-properties show \
+    --account-name sa${var.uks}vmdiag\
+    --auth-mode login && break || sleep 10
+done
+EOT
+    interpreter = ["bash", "-c"]
   }
 }
 
@@ -2061,6 +2093,22 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
+  }
+}
+
+resource "null_resource" "wait_for_chaos_exp_logs" {
+  depends_on = [azurerm_storage_account.chaos_exp_logs]
+
+  provisioner "local-exec" {
+    command = <<EOT
+echo "Waiting for blob service of storage account sauksouth01..."
+for i in {1..10}; do
+  az storage blob service-properties show \
+    --account-name ukschaosstoragelogs \
+    --auth-mode login && break || sleep 10
+done
+EOT
+    interpreter = ["bash", "-c"]
   }
 }
 
