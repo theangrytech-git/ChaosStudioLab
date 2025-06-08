@@ -69,12 +69,8 @@ stages:
 
         - script: |
             echo "Terraform Init"
-
-            export ARM_CLIENT_ID=$(servicePrincipalId)
-            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
-            export ARM_TENANT_ID=$(tenantId)
-            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
-
+            export ARM_USE_OIDC=true
+            
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
               -backend-config="storage_account_name=$(tfStateStorage)" \
@@ -108,10 +104,7 @@ stages:
 
         - script: |
             echo "Terraform Plan"
-            export ARM_CLIENT_ID=$(servicePrincipalId)
-            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
-            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
-            export ARM_TENANT_ID=$(tenantId)
+            export ARM_USE_OIDC=true
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
@@ -228,11 +221,7 @@ stages:
               fi
 
         - script: |
-            echo "Terraform Apply"
-            export ARM_CLIENT_ID=$(servicePrincipalId)
-            export ARM_CLIENT_SECRET=$(servicePrincipalKey)
-            export ARM_SUBSCRIPTION_ID=$(subscriptionId)
-            export ARM_TENANT_ID=$(tenantId)
+            export ARM_USE_OIDC=true
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
