@@ -74,6 +74,7 @@ stages:
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_TENANT_ID=$(tenantId)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
+            export AZURE_STORAGE_AUTH_MODE=login
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
@@ -112,6 +113,7 @@ stages:
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
             export ARM_TENANT_ID=$(tenantId)
+            export AZURE_STORAGE_AUTH_MODE=login
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
@@ -233,6 +235,7 @@ stages:
             export ARM_CLIENT_SECRET=$(servicePrincipalKey)
             export ARM_SUBSCRIPTION_ID=$(subscriptionId)
             export ARM_TENANT_ID=$(tenantId)
+            export AZURE_STORAGE_AUTH_MODE=login
 
             terraform init \
               -backend-config="resource_group_name=$(tfStateRG)" \
