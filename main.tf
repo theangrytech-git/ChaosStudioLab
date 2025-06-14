@@ -263,7 +263,9 @@ resource "azurerm_key_vault" "kv1" {
     # Access policy for SP
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = var.pipeline_sp_object_id
+    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
     secret_permissions = ["Get", "List"]
+    storage_permissions = ["Get"]
   }
 
   tags = {
