@@ -263,14 +263,14 @@ resource "azurerm_key_vault" "kv1" {
     storage_permissions = ["Get"]
   }
 
-  access_policy {
-    # Access policy for SP
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azuread_service_principal.pipeline.object_id
-    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
-    secret_permissions = ["Get", "List"]
-    storage_permissions = ["Get"]
-  }
+  # access_policy {
+  #   # Access policy for SP
+  #   tenant_id = data.azurerm_client_config.current.tenant_id
+  #   object_id = data.azuread_service_principal.pipeline.object_id
+  #   key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
+  #   secret_permissions = ["Get", "List"]
+  #   storage_permissions = ["Get"]
+  # }
 
   tags = {
     Owner       = var.owner_tag
@@ -1173,6 +1173,12 @@ resource "azurerm_role_assignment" "key_vault" {
   principal_id   = azurerm_user_assigned_identity.uai-uks.principal_id
   role_definition_name = "Key Vault Contributor"
   scope          = azurerm_resource_group.uks.id
+}
+
+resource "azurerm_role_assignment" "kv_crypto_officer" {
+  scope                = azurerm_key_vault.kv1.id
+  role_definition_name = "Key Vault Crypto Officer"
+  principal_id         = var.pipeline_sp_object_id
 }
 
 resource "azurerm_role_assignment" "nsg" {
