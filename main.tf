@@ -1313,6 +1313,10 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
   location             = azurerm_resource_group.uks.location
   target_resource_id   = each.value
   target_type          = "Microsoft-VirtualMachine"
+  depends_on = [
+    azurerm_windows_virtual_machine.uks-vmsa,
+    azurerm_windows_virtual_machine.uks-vmsb
+  ]
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
@@ -1320,6 +1324,9 @@ resource "azurerm_chaos_studio_target" "tgt-vmss" {
   location           = data.azurerm_resource_group.uks.location
   target_resource_id = each.value
   target_type        = "Microsoft-VirtualMachineScaleSet"
+  depends_on = [
+    azurerm_windows_virtual_machine_scale_set.uks-vmssa
+  ]
 }
 
 resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
@@ -1695,12 +1702,8 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
   enabled_log {
-    category = "StorageWrite"
-  }
-
-  enabled_log {
-    category = "StorageDelete"
-  }
+  category = "Transaction"
+}
 
   metric {
     category = "AllMetrics"
