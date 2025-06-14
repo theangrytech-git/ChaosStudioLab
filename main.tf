@@ -237,7 +237,7 @@ resource "azurerm_key_vault" "kv1" {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
-    key_permissions = ["Get"]
+    key_permissions = ["Get", "Create", "List", "Delete"]
 
     secret_permissions = [
       "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
@@ -451,7 +451,7 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   admin_username      = "azureadmin"
   admin_password      = azurerm_key_vault_secret.vmpassword1.value
   upgrade_mode        = "Automatic"
-  encryption_at_host_enabled = true
+
 
   os_disk {
     caching              = "ReadWrite"
@@ -509,7 +509,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
   network_interface_ids = [
     azurerm_network_interface.uks-anics[count.index].id,
   ]
-  encryption_at_host_enabled = true
+
 
   os_disk {
     caching              = "ReadWrite"
@@ -547,7 +547,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
   network_interface_ids = [
     azurerm_network_interface.uks-bnics[count.index].id,
   ]
-  encryption_at_host_enabled = true
+
   os_disk {
     caching              = "ReadWrite"
     storage_account_type = "StandardSSD_LRS"
@@ -997,7 +997,7 @@ resource "azurerm_monitor_diagnostic_setting" "cosmosdb_logs" {
   }
 }
 resource "azurerm_monitor_diagnostic_setting" "servicebus_logs" {
-  name                       = "servicebus-diag"
+  name                       = "servicebus-diag-01"
   target_resource_id         = azurerm_servicebus_namespace.cs_servicebus_ns.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
@@ -1012,7 +1012,7 @@ resource "azurerm_monitor_diagnostic_setting" "servicebus_logs" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "eventhub_logs" {
-  name                       = "eventhub-diag"
+  name                       = "eventhub-diag-01"
   target_resource_id         = azurerm_eventhub_namespace.cs_eventhub_ns.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
@@ -1095,7 +1095,7 @@ resource "azurerm_monitor_diagnostic_setting" "diag_function" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "diag_storage" {
-  name                       = "diag-storage"
+  name                       = "diag-storage-01"
   target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
@@ -1702,7 +1702,7 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
   metric {
-    category = "AllMetrics"
+    category = "Transaction"
     enabled  = true
   }
 
