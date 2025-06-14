@@ -6,8 +6,8 @@ variables:
   azureSubscription: 'sp-proj-cs'
   tfStateRG: 'tfstate'
   tfStateStorage: 'chaosstatestorage'
-  tfStateContainer: 'tfstate'
-  tfStateKey: 'chaosstudio.tfstate'
+  tfStateContainer: 'cstfstate'
+  tfStateKey: 'terraform.tfstate'
 
 stages:
 - stage: Init
