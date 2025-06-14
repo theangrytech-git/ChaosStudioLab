@@ -253,6 +253,13 @@ resource "azurerm_key_vault" "kv1" {
     secret_permissions = ["Get", "List"]
   }
 
+  access_policy {
+    # Access policy for SP
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = var.pipeline_sp_object_id
+    secret_permissions = ["Get", "List"]
+  }
+
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
