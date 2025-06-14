@@ -237,7 +237,7 @@ resource "azurerm_key_vault" "kv1" {
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
 
-    key_permissions = ["Get", "Create", "List", "Delete"]
+    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
 
     secret_permissions = [
       "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
