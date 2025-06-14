@@ -397,7 +397,7 @@ resource "azurerm_key_vault_secret" "vmpassword2" {
 # }
 
 /*******************************************************************************
-                      CREATE PRIVATE ENDPOIND FOR KV
+                      CREATE PRIVATE ENDPOINT FOR KV
 *******************************************************************************/
 resource "azurerm_private_endpoint" "kv_pe" {
   name                = "pe-kv1"
@@ -434,12 +434,12 @@ resource "azurerm_app_configuration" "uks-config" {
  #encryption {
   #key_vault_identity_client_id = azurerm_user_assigned_identity.cmk_mi.client_id #CMK-based encryption is not enabled in Azurerm v4.16 yet. Will uncomment when it does.
   #key_vault_key_identifier     = azurerm_key_vault_key.cmk.id
-#}
-  tags = {
+  #}
+    tags = {
     Owner = var.owner_tag
     Environment = var.environment_tag
     Health = var.health_tag
-  }
+    }
 }
 
 resource "azurerm_app_configuration_key" "ck1" {
@@ -626,9 +626,6 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
     }
   }
 
-  boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
-  }
   identity {
     type = "SystemAssigned"
   }
@@ -640,12 +637,6 @@ resource "azurerm_windows_virtual_machine_scale_set" "uks-vmssa" {
   }
 depends_on = [azurerm_key_vault_secret.vmpassword1]
 }
-
-data "azurerm_resources" "availability_zone_vmss" {
-  type                = "Microsoft.Compute/virtualMachineScaleSets"
-  resource_group_name = azurerm_resource_group.uks.name
-}
-
 
 /*******************************************************************************
                          CREATE VIRTUAL MACHINES
@@ -681,9 +672,7 @@ resource "azurerm_windows_virtual_machine" "uks-vmsa" {
     sku       = "2022-Datacenter"
     version   = "latest"
   }
-  boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
-  }
+
   identity {
     type = "SystemAssigned"
   }
@@ -720,9 +709,6 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
     sku       = "2022-Datacenter"
     version   = "latest"
   }
-  boot_diagnostics {
-    storage_account_uri = azurerm_storage_account.uks-vm1.primary_blob_endpoint
-  }
   identity {
     type = "SystemAssigned"
   }
@@ -732,11 +718,6 @@ resource "azurerm_windows_virtual_machine" "uks-vmsb" {
     Health  = var.health_tag
   }
 # checkov:skip=CKV_AZURE_50: No manual VM extensions installed
-}
-
-data "azurerm_resources" "all_vms" {
-  type                = "Microsoft.Compute/virtualMachines"
-  resource_group_name = azurerm_resource_group.uks.name
 }
 
 # resource "azurerm_windows_virtual_machine" "ukw-avms" {
@@ -857,7 +838,7 @@ resource "azurerm_firewall" "uks-fw1" {
   sku_name            = "AZFW_VNet"
   sku_tier            = "Basic"
   threat_intel_mode   = "Deny"
-  #firewall_policy_id  = azurerm_firewall_policy.uks-fw-policy.id # Commented out because of azurerm_firewall_network_rule_collection/nat_rule_collection.
+ firewall_policy_id  = azurerm_firewall_policy.uks-fw-policy.id # Commented out because of azurerm_firewall_network_rule_collection/nat_rule_collection.
 
   ip_configuration {
     name                 = "ipconfig-fw-${var.uks}"
@@ -877,23 +858,23 @@ resource "azurerm_firewall" "uks-fw1" {
                           CREATE FIREWALL POLICY
 *******************************************************************************/
 # Commented out as you can't have bith Firewall_Policy_ID and azurerm_firewall_network_rule_collection/nat_rule_collection
-# resource "azurerm_firewall_policy" "uks-fw-policy" {
-#   name                = "fw-policy-${var.uks}"
-#   resource_group_name = azurerm_resource_group.uks.name
-#   location            = var.uks
+resource "azurerm_firewall_policy" "uks-fw-policy" {
+  name                = "fw-policy-${var.uks}"
+  resource_group_name = azurerm_resource_group.uks.name
+  location            = var.uks
 
-#   sku = "Basic"
+  sku = "Basic"
 
-# # checkov:skip=CKV_AZURE_XYZ: IDPS not supported with Basic SKU
-#   # intrusion_detection {
-#   #   mode = "Deny"  #Enable IDPS in deny mode if FW SKU is set to Premium.
-#   # }
+# checkov:skip=CKV_AZURE_XYZ: IDPS not supported with Basic SKU
+  # intrusion_detection {
+  #   mode = "Deny"  #Enable IDPS in deny mode if FW SKU is set to Premium.
+  # }
 
-#   tags = {
-#     Owner       = var.owner_tag
-#     Environment = var.environment_tag
-#   }
-# }
+  tags = {
+    Owner       = var.owner_tag
+    Environment = var.environment_tag
+  }
+}
 
 # resource "azurerm_firewall" "ukw-fw1" {
 #   name                = "fw-${var.ukw}-01"
@@ -920,20 +901,20 @@ resource "azurerm_firewall" "uks-fw1" {
 /*******************************************************************************
                          CREATE FIREWALL RULES
 *******************************************************************************/
-resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
-  name                = "${var.uks}-outbound"
-  azure_firewall_name = azurerm_firewall.uks-fw1.name
-  resource_group_name = azurerm_resource_group.uks.name
-  priority            = 100
-  action              = "Allow"
-  rule {
-    name                  = "${var.uks}-outbound"
-    source_addresses      = [var.ukscidr]
-    destination_addresses = ["*"]
-    destination_ports     = ["*"]
-    protocols             = ["Any"]
-  }
-}
+# resource "azurerm_firewall_network_rule_collection" "uks-outbound" {
+#   name                = "${var.uks}-outbound"
+#   azure_firewall_name = azurerm_firewall.uks-fw1.name
+#   resource_group_name = azurerm_resource_group.uks.name
+#   priority            = 100
+#   action              = "Allow"
+#   rule {
+#     name                  = "${var.uks}-outbound"
+#     source_addresses      = [var.ukscidr]
+#     destination_addresses = ["*"]
+#     destination_ports     = ["*"]
+#     protocols             = ["Any"]
+#   }
+# }
 
 # resource "azurerm_firewall_network_rule_collection" "ukw-outbound" {
 #   name                = "${var.ukw}-outbound"
@@ -1214,22 +1195,6 @@ resource "azurerm_storage_account" "uks-sa1" {
   }
 }
 
-resource "null_resource" "wait_for_sauksouth01" {
-  depends_on = [azurerm_storage_account.uks-sa1]
-
-  provisioner "local-exec" {
-    command = <<EOT
-echo "Waiting for blob service of storage account sauksouth01..."
-for i in {1..10}; do
-  az storage blob service-properties show \
-    --account-name sauksouth01 \
-    --auth-mode login && break || sleep 10
-done
-EOT
-    interpreter = ["bash", "-c"]
-  }
-}
-
 # checkov:skip=CKV2_AZURE_1: CMK encryption not required in lab environment
 # checkov:skip=CKV2_AZURE_33: Private endpoint not used in lab/test for connectivity simplicity
 resource "azurerm_storage_account" "uks-vm1" {
@@ -1263,22 +1228,6 @@ resource "azurerm_storage_account" "uks-vm1" {
   }
 }
 
-resource "null_resource" "wait_for_sauksouthvmdiag" {
-  depends_on = [azurerm_storage_account.uks-vm1]
-
-  provisioner "local-exec" {
-    command = <<EOT
-echo "Waiting for blob service of storage account sauksouthvmdiag..."
-for i in {1..10}; do
-  az storage blob service-properties show \
-    --account-name sauksouthvmdiag \
-    --auth-mode login && break || sleep 10
-done
-EOT
-    interpreter = ["bash", "-c"]
-  }
-}
-
 # resource "azurerm_storage_account" "ukw-vm1" {
 #   name                     = "sa${var.ukw}vmdiag"
 #   resource_group_name      = azurerm_resource_group.ukw.name
@@ -1303,8 +1252,8 @@ resource "azurerm_service_plan" "uks-asp" {
   location                 = azurerm_resource_group.uks.location
   os_type             = var.uks-asp-os
   sku_name            = var.uks-asp-sku
-# checkov:skip=CKV_AZURE_212: Failover not required for Basic tier / lab setup
-# checkov:skip=CKV_AZURE_225: Zone redundancy not supported on B1 SKU
+  # checkov:skip=CKV_AZURE_212: Failover not required for Basic tier / lab setup
+  # checkov:skip=CKV_AZURE_225: Zone redundancy not supported on B1 SKU
   # zone_redundant = true  #Uncomment if moving from B1//S1/F1/EP1 SKU's
   tags = {
     Owner = var.owner_tag
@@ -1496,6 +1445,89 @@ resource "azurerm_monitor_diagnostic_setting" "eventhub_logs" {
   }
 }
 
+resource "azurerm_monitor_diagnostic_setting" "vm_diag" {
+  for_each = merge(
+    { for idx, vm in azurerm_windows_virtual_machine.uks-vmsa : "vmsa-${idx}" => vm },
+    { for idx, vm in azurerm_windows_virtual_machine.uks-vmsb : "vmsb-${idx}" => vm }
+  )
+  name                       = "diag-${each.key}"
+  target_resource_id         = each.value.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "Administrative"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "vmss_diag" {
+  for_each = {
+    for idx, vmss in azurerm_windows_virtual_machine_scale_set.uks-vmssa :
+    "vmss-${idx}" => vmss
+  }
+  name                       = "diag-${each.key}"
+  target_resource_id         = each.value.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "Administrative"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "diag_kv" {
+  name                       = "diag-kv"
+  target_resource_id         = azurerm_key_vault.kv1.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "AuditEvent"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "diag_function" {
+  name                       = "diag-func"
+  target_resource_id         = azurerm_linux_function_app.uks-fa.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "diag_storage" {
+  name                       = "diag-storage"
+  target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
+
+  enabled_log {
+    category = "StorageRead"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
 /*******************************************************************************
                          CREATE MANAGED IDENTITY
 *******************************************************************************/
@@ -1588,13 +1620,6 @@ resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-sa1" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_storage_account.uks-sa1.identity[0].principal_id
   depends_on = [azurerm_storage_account.uks-sa1]
-}
-
-resource "azurerm_role_assignment" "storage_blob_data_contributor_uks-vm1" {
-  scope                = azurerm_storage_account.uks-vm1.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_storage_account.uks-vm1.identity[0].principal_id
-  depends_on = [azurerm_storage_account.uks-vm1]
 }
 
 resource "azurerm_role_assignment" "storage_blob_data_contributor_chaos_exp_logs" {
@@ -2093,22 +2118,6 @@ resource "azurerm_storage_account" "chaos_exp_logs" {
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
-  }
-}
-
-resource "null_resource" "wait_for_ukschaosstoragelogs" {
-  depends_on = [azurerm_storage_account.chaos_exp_logs]
-
-  provisioner "local-exec" {
-    command = <<EOT
-echo "Waiting for blob service of storage account ukschaosstoragelogs..."
-for i in {1..10}; do
-  az storage blob service-properties show \
-    --account-name ukschaosstoragelogs \
-    --auth-mode login && break || sleep 10
-done
-EOT
-    interpreter = ["bash", "-c"]
   }
 }
 

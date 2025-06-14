@@ -20,7 +20,7 @@ terraform {
 
   backend "azurerm" {
       resource_group_name  = "tfstate"
-      storage_account_name = "mytfstaterepo"
+      storage_account_name = "chaosstatestorage"
       container_name       = "cstfstate"
       key                  = "terraform.tfstate"
   }
