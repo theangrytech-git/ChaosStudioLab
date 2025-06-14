@@ -1373,12 +1373,14 @@ resource "azurerm_chaos_studio_capability" "cap_vmss_shutdown" {
   for_each                = azurerm_chaos_studio_target.tgt-vmss
   capability_type        = "Shutdown-1.0"
   chaos_studio_target_id = each.value.id
+  depends_on = [azurerm_windows_virtual_machine_scale_set.uks-vmssa]
 }
 
 resource "azurerm_chaos_studio_capability" "cap_vmss_redeploy" {
   for_each                = azurerm_chaos_studio_target.tgt-vmss
   capability_type        = "Shutdown-2.0"
   chaos_studio_target_id = each.value.id
+  depends_on = [azurerm_windows_virtual_machine_scale_set.uks-vmssa]
 }
 
 resource "azurerm_chaos_studio_capability" "cap_servicebus_queue_state" {
@@ -1694,22 +1696,6 @@ resource "azurerm_log_analytics_workspace" "chaos_logging" {
   location            = azurerm_resource_group.uks.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
-}
-
-resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
-  name                       = "diag-chaos-queue"
-  target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
-
-  metric {
-    category = "Transaction"
-    enabled  = true
-  }
-
-  metric {
-    category = "Capacity"
-    enabled  = true
-  }
 }
 
 /********************************************************************************
