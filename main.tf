@@ -1741,7 +1741,7 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
   for_each = local.chaos_vm_targets
   location             = azurerm_resource_group.uks.location
   target_resource_id   = each.value
-  target_type          = "Microsoft.Compute/virtualMachines"
+  target_type          = "Microsoft-VirtualMachine"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
@@ -1754,25 +1754,25 @@ resource "azurerm_chaos_studio_target" "tgt-vmss" {
 resource "azurerm_chaos_studio_target" "tgt-azurestorage" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_storage_account.chaos_exp_logs.id
-  target_type         = "Microsoft.Storage"
+  target_type         = "Microsoft-StorageAccount"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-uks-sa1" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_storage_account.uks-sa1.id
-  target_type         = "Microsoft.Storage"
+  target_type         = "Microsoft-StorageAccount"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-uks-vm1" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_storage_account.uks-vm1.id
-  target_type         = "Microsoft.Storage"
+  target_type         = "Microsoft-StorageAccount"
 }
 
 resource "azurerm_chaos_studio_target" "tgt-appservice" {
   location            = azurerm_resource_group.uks.location
   target_resource_id  = azurerm_linux_function_app.uks-fa.id
-  target_type         = "Microsoft-Web/sites"
+  target_type         = "Microsoft-AppService"
 }
 
 # resource "azurerm_chaos_studio_target" "tgt-sqldb" {
@@ -2135,7 +2135,15 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
   enabled_log {
-    category = "StorageQueueLogs"
+    category = "StorageRead"
+  }
+
+  enabled_log {
+    category = "StorageWrite"
+  }
+
+  enabled_log {
+    category = "StorageDelete"
   }
 
   metric {
