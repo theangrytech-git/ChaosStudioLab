@@ -216,7 +216,7 @@ resource "azurerm_key_vault" "kv1" {
   purge_protection_enabled    = true
   public_network_access_enabled = false
   network_acls {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = "AzureServices"
     virtual_network_subnet_ids = concat(
       [azurerm_subnet.uks-hub1-subnet.id]
@@ -1080,13 +1080,13 @@ resource "azurerm_monitor_diagnostic_setting" "diag_kv" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "diag_function" {
-  name                       = "diag-func"
+  name                       = "diag-funcs"
   target_resource_id         = azurerm_linux_function_app.uks-fa.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-  enabled_log {
-    category = "AppServiceConsoleLogs"
-  }
+  # enabled_log {
+  #   category = "AppServiceConsoleLogs"
+  # }
 
   metric {
     category = "AllMetrics"
@@ -1388,7 +1388,7 @@ resource "azurerm_chaos_studio_capability" "cap_servicebus_queue_state" {
 
 resource "azurerm_chaos_studio_capability" "cap_appsvc_latency" {
   chaos_studio_target_id = azurerm_chaos_studio_target.tgt-appservice.id
-  capability_type         = "LatencyInjection-1.0"
+  capability_type         = "Stop-1.0"
 }
 
 resource "azurerm_chaos_studio_capability" "cap_cosmosdb_failover" {
@@ -1701,12 +1701,13 @@ resource "azurerm_monitor_diagnostic_setting" "chaos_queue_logs" {
   target_resource_id         = azurerm_storage_account.chaos_exp_logs.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.chaos_logging.id
 
-  enabled_log {
-  category = "Transaction"
-}
-
   metric {
     category = "AllMetrics"
+    enabled  = true
+  }
+
+  metric {
+    category = "Capacity"
     enabled  = true
   }
 }
