@@ -250,7 +250,13 @@ resource "azurerm_key_vault" "kv1" {
     # Access policy for Function App's managed identity
     tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_linux_function_app.uks-fa.identity[0].principal_id
-    secret_permissions = ["Get", "List"]
+    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
+
+    secret_permissions = [
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
+    ]
+
+    storage_permissions = ["Get"]
   }
 
   access_policy {
