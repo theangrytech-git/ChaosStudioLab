@@ -179,6 +179,11 @@ stages:
                 --name ${{ variables.tfStateStorage }} \
                 --resource-group ${{ variables.tfStateRG }} \
                 --default-action Allow
+              echo "Temporarily allowing public access for Key Vault..."
+              az keyvault update \
+                --name $(tfKeyVault) \
+                --resource-group ${{ variables.tfStateRG }} \
+                --public-network-access Enabled
               echo "Waiting 30 seconds for Firewall and Key Vault rule propagation..."
               sleep 30
 
