@@ -205,6 +205,10 @@ resource "azurerm_subnet_route_table_association" "uks" {
 
 data "azurerm_client_config" "current" {}
 
+data "azuread_service_principal" "pipeline" {
+  application_id = "c3449e53-d66a-4be6-b023-92f5cf0882af"
+}
+
 resource "azurerm_key_vault" "kv1" {
   depends_on                  = [azurerm_resource_group.uks]
   name                        = random_id.kvname.hex
@@ -262,7 +266,7 @@ resource "azurerm_key_vault" "kv1" {
   access_policy {
     # Access policy for SP
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = var.pipeline_sp_object_id
+    object_id = data.azuread_service_principal.pipeline.object_id
     key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
     secret_permissions = ["Get", "List"]
     storage_permissions = ["Get"]
