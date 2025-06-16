@@ -380,7 +380,7 @@ resource "azurerm_app_configuration_key" "ck1" {
   configuration_store_id = azurerm_app_configuration.uks-config.id
   key                    = "key1${random_string.random.result}"
   type                   = "kv"
-  label                  = "appsecret1-${random_string.random}"
+  label                  = "appsecret1-${random_string.random.result}"
   value = random_password.vmpassword.result
 
   depends_on = [
@@ -390,7 +390,7 @@ resource "azurerm_app_configuration_key" "ck2" {
   configuration_store_id = azurerm_app_configuration.uks-config.id
   key                    = "key2${random_string.random.result}"
   type                   = "kv"
-  label                  = "appsecret2-${random_string.random}"
+  label                  = "appsecret2-${random_string.random.result}"
   value    = random_password.vmpassword.result
 
   depends_on = [
