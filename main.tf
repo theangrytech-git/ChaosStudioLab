@@ -991,7 +991,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   }
 
   local_authentication_disabled = true
-  key_vault_key_id = azurerm_key_vault_key.cosmosdb_key.id
+  key_vault_key_id = azurerm_key_vault_key.cosmosdb_key.key_vault_key_id
   depends_on = [azurerm_key_vault_key.cosmosdb_key]
 }
 
@@ -1368,7 +1368,7 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
-  for_each = azurerm_windows_virtual_machine_scale_set.uks-vmssa
+  for_each           = { for vmss in azurerm_windows_virtual_machine_scale_set.uks-vmssa : vmss.name => vmss }
 
   location           = var.uks
   target_resource_id = each.value.id
