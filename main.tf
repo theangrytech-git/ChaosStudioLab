@@ -974,8 +974,8 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
 
-  public_network_access_enabled  = false
-  is_virtual_network_filter_enabled = true
+  public_network_access_enabled       = false
+  is_virtual_network_filter_enabled   = true
 
   identity {
     type = "SystemAssigned"
@@ -991,7 +991,9 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   }
 
   local_authentication_disabled = true
-  key_vault_key_id = azurerm_key_vault_key.cosmosdb_key.key_vault_key_id
+
+  key_vault_key_id = join("/", slice(split("/", azurerm_key_vault_key.cosmosdb_key.id), 0, 6))
+
   depends_on = [azurerm_key_vault_key.cosmosdb_key]
 }
 
