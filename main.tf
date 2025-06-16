@@ -304,7 +304,7 @@ resource "azurerm_key_vault_access_policy" "cosmosdb" {
 resource "azurerm_key_vault_access_policy" "servicebus" {
   key_vault_id = azurerm_key_vault.kv1.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_servicebus_namespace.cs_servicebus_ns.identity.principal_id
+  object_id    = azurerm_servicebus_namespace.cs_servicebus_ns.identity[0].principal_id
 
   key_permissions = ["Get", "WrapKey", "UnwrapKey"]
   }
