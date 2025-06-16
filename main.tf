@@ -1375,9 +1375,7 @@ resource "azurerm_chaos_studio_target" "tgt-vmss" {
   target_type        = "Microsoft-VirtualMachineScaleSet"
 
   depends_on = [
-    azurerm_windows_virtual_machine_scale_set.uks-vmssa,
-    azurerm_chaos_studio_resource.target_lab
-  ]
+    azurerm_windows_virtual_machine_scale_set.uks-vmssa ]
 }
 
 
