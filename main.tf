@@ -275,18 +275,6 @@ resource "azurerm_key_vault" "kv1" {
     storage_permissions = ["Get"]
   }
 
-  access_policy {
-    # Access policy for CosmosDB
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = azurerm_cosmosdb_account.cs_cosmosdb.identity[0].principal_id
-    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
-
-    secret_permissions = [
-      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
-    ]
-    storage_permissions = ["Get"]
-  }
-
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
@@ -313,6 +301,15 @@ resource "azurerm_key_vault_access_policy" "kv1_vmsb_access" {
   object_id = azurerm_windows_virtual_machine.uks-vmsb[0].identity[0].principal_id
 
   secret_permissions = ["Get", "List"]
+}
+
+resource "azurerm_key_vault_access_policy" "cosmosdb" {
+  key_vault_id = azurerm_key_vault.kv1.id
+
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = azurerm_cosmosdb_account.cs_cosmosdb.identity[0].principal_id
+
+  key_permissions = ["Get", "WrapKey", "UnwrapKey"]
 }
 
 /*******************************************************************************
