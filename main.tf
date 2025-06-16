@@ -992,7 +992,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
 
   local_authentication_disabled = true
 
-  key_vault_key_id = join("/", slice(split("/", azurerm_key_vault_key.cosmosdb_key.id), 0, 6))
+  key_vault_key_id = join("/", slice(split("/", azurerm_key_vault_key.cosmosdb_key.id), 0, 5))
 
   depends_on = [azurerm_key_vault_key.cosmosdb_key]
 }
