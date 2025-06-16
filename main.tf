@@ -263,18 +263,6 @@ resource "azurerm_key_vault" "kv1" {
     storage_permissions = ["Get"]
   }
 
-  access_policy {
-    # Access policy for ServiceBus
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_servicebus_namespace.cs_servicebus_ns[0].principal_id
-    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
-
-    secret_permissions = [
-      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
-    ]
-    storage_permissions = ["Get"]
-  }
-
   tags = {
     Owner       = var.owner_tag
     Environment = var.environment_tag
@@ -311,6 +299,15 @@ resource "azurerm_key_vault_access_policy" "cosmosdb" {
 
   key_permissions = ["Get", "WrapKey", "UnwrapKey"]
 }
+
+
+resource "azurerm_key_vault_access_policy" "servicebus" {
+  key_vault_id = azurerm_key_vault.kv1.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_servicebus_namespace.cs_servicebus_ns.identity.principal_id
+
+  key_permissions = ["Get", "WrapKey", "UnwrapKey"]
+  }
 
 /*******************************************************************************
                          CREATE KEY VAULT SECRETS
