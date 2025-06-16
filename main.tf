@@ -278,7 +278,7 @@ resource "azurerm_key_vault" "kv1" {
   access_policy {
     # Access policy for CosmosDB
     tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_cosmosdb_account.cs_cosmosdb[0].principal_id
+    object_id = azurerm_cosmosdb_account.cs_cosmosdb.identity[0].principal_id
     key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
 
     secret_permissions = [
@@ -994,6 +994,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
 
   local_authentication_disabled = true
   key_vault_key_id = azurerm_key_vault_key.cosmosdb_key.id
+  depends_on = [azurerm_key_vault_key.cosmosdb_key]
 }
 
 resource "azurerm_key_vault_key" "cosmosdb_key" {
@@ -1006,10 +1007,10 @@ resource "azurerm_key_vault_key" "cosmosdb_key" {
   expiration_date = local.expiration_date
 }
 
-data "azurerm_cosmosdb_account" "cs_cosmosdb" {
-  name                = azurerm_cosmosdb_account.cs_cosmosdb.name
-  resource_group_name = azurerm_cosmosdb_account.cs_cosmosdb.resource_group_name
-}
+# data "azurerm_cosmosdb_account" "cs_cosmosdb" {
+#   name                = azurerm_cosmosdb_account.cs_cosmosdb.name
+#   resource_group_name = azurerm_cosmosdb_account.cs_cosmosdb.resource_group_name
+# }
 
 /*******************************************************************************
                             CREATE EVENT HUB
