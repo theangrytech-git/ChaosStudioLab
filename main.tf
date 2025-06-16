@@ -977,6 +977,10 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
   public_network_access_enabled  = false
   is_virtual_network_filter_enabled = true
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   consistency_policy {
     consistency_level = "Session"
   }
