@@ -205,9 +205,9 @@ resource "azurerm_subnet_route_table_association" "uks" {
 
 data "azurerm_client_config" "current" {}
 
-data "azuread_service_principal" "pipeline" {
-  application_id = "c3449e53-d66a-4be6-b023-92f5cf0882af"
-}
+# data "azuread_service_principal" "pipeline" {
+#   application_id = "c3449e53-d66a-4be6-b023-92f5cf0882af"
+# }
 
 resource "azurerm_key_vault" "kv1" {
   depends_on                  = [azurerm_resource_group.uks]
@@ -263,14 +263,29 @@ resource "azurerm_key_vault" "kv1" {
     storage_permissions = ["Get"]
   }
 
-  # access_policy {
-  #   # Access policy for SP
-  #   tenant_id = data.azurerm_client_config.current.tenant_id
-  #   object_id = data.azuread_service_principal.pipeline.object_id
-  #   key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
-  #   secret_permissions = ["Get", "List"]
-  #   storage_permissions = ["Get"]
-  # }
+  access_policy {
+    # Access policy for ServiceBus
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_servicebus_namespace.cs_servicebus_ns[0].principal_id
+    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
+
+    secret_permissions = [
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
+    ]
+    storage_permissions = ["Get"]
+  }
+
+  access_policy {
+    # Access policy for CosmosDB
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_cosmosdb_account.cs_cosmosdb[0].principal_id
+    key_permissions = ["Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy"]
+
+    secret_permissions = [
+      "Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set",
+    ]
+    storage_permissions = ["Get"]
+  }
 
   tags = {
     Owner       = var.owner_tag
@@ -882,7 +897,7 @@ resource "azurerm_linux_function_app" "uks-fa" {
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
     # Adding secrets from Key Vault
     "appsecret1" = "${azurerm_app_configuration_key.ck1.value}"
-    "appsecret2" = "${azurerm_app_configuration_key.ck2.value})"
+    "appsecret2" = "${azurerm_app_configuration_key.ck2.value}"
   }
 
   identity {
@@ -915,6 +930,10 @@ resource "azurerm_servicebus_namespace" "cs_servicebus_ns" {
   identity {
     type = "SystemAssigned"
   }
+}
+data "azurerm_servicebus_namespace" "cs_servicebus_ns" {
+  name = azurerm_servicebus_namespace.cs_servicebus_ns.name
+  resource_group_name = azurerm_servicebus_namespace.cs_servicebus_ns.resource_group_name
 }
 
 resource "azurerm_servicebus_queue" "ingress" {
@@ -985,6 +1004,11 @@ resource "azurerm_key_vault_key" "cosmosdb_key" {
   key_size     = 2048
   key_opts     = ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
   expiration_date = local.expiration_date
+}
+
+data "azurerm_cosmosdb_account" "cs_cosmosdb" {
+  name                = azurerm_cosmosdb_account.cs_cosmosdb.name
+  resource_group_name = azurerm_cosmosdb_account.cs_cosmosdb.resource_group_name
 }
 
 /*******************************************************************************
@@ -1178,7 +1202,7 @@ resource "azurerm_role_assignment" "key_vault" {
 resource "azurerm_role_assignment" "kv_crypto_officer" {
   scope                = azurerm_key_vault.kv1.id
   role_definition_name = "Key Vault Crypto Officer"
-  principal_id         = var.pipeline_sp_object_id
+  principal_id         = azurerm_user_assigned_identity.uai-uks.principal_id
 }
 
 resource "azurerm_role_assignment" "nsg" {
