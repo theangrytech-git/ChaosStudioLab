@@ -1368,14 +1368,14 @@ resource "azurerm_chaos_studio_target" "tgt-vms" {
 }
 
 resource "azurerm_chaos_studio_target" "tgt-vmss" {
-  for_each = azurerm_linux_virtual_machine_scale_set.vmss
+  for_each = azurerm_windows_virtual_machine_scale_set.uks-vmssa
 
   location           = var.uks
   target_resource_id = each.value.id
   target_type        = "Microsoft-VirtualMachineScaleSet"
 
   depends_on = [
-    azurerm_linux_virtual_machine_scale_set.vmss,
+    azurerm_windows_virtual_machine_scale_set.uks-vmssa,
     azurerm_chaos_studio_resource.target_lab
   ]
 }
