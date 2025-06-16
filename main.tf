@@ -314,7 +314,7 @@ resource "azurerm_key_vault_access_policy" "servicebus" {
 *******************************************************************************/
 resource "azurerm_key_vault_secret" "vmpassword1" {
   depends_on   = [azurerm_key_vault.kv1]
-  name         = "vmpassword1"
+  name         = "vmpass1-${random_sting.random.result}"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
   content_type = "uks VM Password Secret"
@@ -323,7 +323,7 @@ resource "azurerm_key_vault_secret" "vmpassword1" {
 
 resource "azurerm_key_vault_secret" "vmpassword2" {
   depends_on   = [azurerm_key_vault.kv1]
-  name         = "vmpassword2"
+  name         = "vmpass2-${random_sting.random.result}"
   value        = random_password.vmpassword.result
   key_vault_id = azurerm_key_vault.kv1.id
   content_type = "ukw VM Password Secret"
@@ -949,7 +949,7 @@ resource "azurerm_servicebus_topic" "updates" {
 }
 
 resource "azurerm_key_vault_key" "sb_key" {
-  name         = "sb-cmk"
+  name         = "sb-cmk-${random_sting.random.result}"
   key_vault_id = azurerm_key_vault.kv1.id
   # checkov:skip=CKV_AZURE_112 reason="Not using HSM-backed key by design"
   key_type     = "RSA"
@@ -996,7 +996,7 @@ resource "azurerm_cosmosdb_account" "cs_cosmosdb" {
 }
 
 resource "azurerm_key_vault_key" "cosmosdb_key" {
-  name         = "cosmos-cmk"
+  name         = "cosmos-cmk-${random_sting.random.result}"
   key_vault_id = azurerm_key_vault.kv1.id
   # checkov:skip=CKV_AZURE_112 reason="Not using HSM-backed key by design"
   key_type     = "RSA"
