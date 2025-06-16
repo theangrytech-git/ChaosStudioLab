@@ -96,8 +96,8 @@ variable "agent_ip" {
   default = ""
 }
 
-# variable "pipeline_sp_object_id" {
-#   description = "Service Principal Object ID for Azure DevOps Pipeline"
-#   type        = string
-#   default     = ""
-# }
+variable "pipeline_sp_object_id" {
+  description = "Service Principal Object ID for Azure DevOps Pipeline"
+  type        = string
+  default     = ""
+}

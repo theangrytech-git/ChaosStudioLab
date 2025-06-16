@@ -300,7 +300,6 @@ resource "azurerm_key_vault_access_policy" "cosmosdb" {
   key_permissions = ["Get", "WrapKey", "UnwrapKey"]
 }
 
-
 resource "azurerm_key_vault_access_policy" "servicebus" {
   key_vault_id = azurerm_key_vault.kv1.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
@@ -308,6 +307,19 @@ resource "azurerm_key_vault_access_policy" "servicebus" {
 
   key_permissions = ["Get", "WrapKey", "UnwrapKey"]
   }
+
+ resource "azurerm_key_vault_access_policy" "service_principal" {
+  key_vault_id = azurerm_key_vault.kv1.id
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  object_id = var.pipeline_sp_object_id
+
+  key_permissions = [
+    "Get", "Create", "List", "Delete", "GetRotationPolicy", "SetRotationPolicy", "Update"
+  ]
+
+  secret_permissions = ["Get", "List"]
+  storage_permissions = ["Get"]
+}
 
 /*******************************************************************************
                          CREATE KEY VAULT SECRETS
