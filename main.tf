@@ -1653,16 +1653,237 @@ resource "azurerm_role_assignment" "chaos_vm_contributor" {
   name = uuidv5("url", "chaos|vm|${each.value.exp_name}|${each.value.scope_id}")
 }
 
-# /********************************************************************************
-# Notes:
-# This section will be used to create smaller issues based within UK South and
-# Global Resources designed to test failovers and outages. This will include things
-# like AAD outages, App Service Plan and VM Resource failures, Zonal outages, etc.
+#/********************************************************************************
+# Notes: Created based on PIR's NKRF-1TG (21-JAN-24 - Services imapacted by
+# ARM Failures) and PIR 1K80-N_8 (18-JUL-24 Impact to multiple services in Central US)
+#
+# "Serverless compute outage + messaging outage" (Stop App Service + disable/enable
+# ServiceBus and EventHub)
+#
+# Scenario: your Functions (App Service target type) stop responding (host disruption)
+# while the messaging layer is misconfigured/disabled. Then the experiment
+# self-recovers by re-enabling messaging.
+#
+#********************************************************************************/
 
-# I will need to be able to gather resources dynamically, and create scenarios
-# that will be randomised (ie random availability zone failures, VM failures, etc)
-# so that no one scenario will be the same. This will be created within Azure and
-# can be extracted via ARM template for future use if needed.
+resource "azurerm_chaos_studio_experiment" "serverless_messaging_outage" {
+  name                = "exp-serverless-messaging-outage"
+  resource_group_name = module.rg_uks_3.name
+  location            = module.rg_uks_3.location
 
-# ********************************************************************************/
-# #
+  identity { type = "SystemAssigned" }
+
+  selectors {
+    name                    = "AppServiceSelector"
+    chaos_studio_target_ids = values(azurerm_chaos_studio_target.tgt_appservice)[*].id
+  }
+
+  selectors {
+    name                    = "ServiceBusSelector"
+    chaos_studio_target_ids = [azurerm_chaos_studio_target.tgt-servicebus.id]
+  }
+
+  selectors {
+    name                    = "EventHubSelector"
+    chaos_studio_target_ids = [azurerm_chaos_studio_target.tgt-eventhub.id]
+  }
+
+  # STEP 1: Stop Functions / App Service apps (auto-restarts at end of duration)
+  steps {
+    name = "StopServerlessCompute"
+    branch {
+      name = "StopApps"
+
+      dynamic "actions" {
+        for_each = azurerm_chaos_studio_capability.cap_appsvc_latency
+        content {
+          urn           = actions.value.urn
+          selector_name = "AppServiceSelector"
+          action_type   = "continuous"
+          duration      = "PT10M"
+          # no parameters for Stop-1.0
+        }
+      }
+    }
+  }
+
+  # STEP 2: Disable messaging
+  steps {
+    name = "DisableMessaging"
+    branch {
+      name = "DisableSBandEH"
+
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_queue_state.urn
+        selector_name = "ServiceBusSelector"
+        action_type   = "discrete"
+        parameters = {
+          desiredState = "Disabled"
+          queues       = "*"
+        }
+      }
+
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_state.urn
+        selector_name = "EventHubSelector"
+        action_type   = "discrete"
+        parameters = {
+          desiredState = "Disabled"
+          eventHubs    = "*"
+        }
+      }
+    }
+  }
+
+  # STEP 3: Re-enable messaging
+  steps {
+    name = "ReEnableMessaging"
+    branch {
+      name = "EnableSBandEH"
+
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_servicebus_queue_state.urn
+        selector_name = "ServiceBusSelector"
+        action_type   = "discrete"
+        parameters = {
+          desiredState = "Active"
+          queues       = "*"
+        }
+      }
+
+      actions {
+        urn           = azurerm_chaos_studio_capability.cap_eventhub_state.urn
+        selector_name = "EventHubSelector"
+        action_type   = "discrete"
+        parameters = {
+          desiredState = "Active"
+          eventHubs    = "*"
+        }
+      }
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex4" {
+  name                       = "exp-serverless-messaging-outage-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.serverless_messaging_outage.id
+  log_analytics_workspace_id = module.chaos.id
+
+  enabled_log { category = "ExperimentOrchestration" }
+}
+
+# RBAC (recommended minimums)
+resource "azurerm_role_assignment" "exp4_appsvc_website_contrib" {
+  scope                = module.rg_uks_2.id
+  role_definition_name = "Website Contributor"
+  principal_id         = azurerm_chaos_studio_experiment.serverless_messaging_outage.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "exp4_servicebus_data_owner" {
+  scope                = module.servicebus.id
+  role_definition_name = "Azure Service Bus Data Owner"
+  principal_id         = azurerm_chaos_studio_experiment.serverless_messaging_outage.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "exp4_eventhub_data_owner" {
+  scope                = module.eventhub_ns.id
+  role_definition_name = "Azure Event Hubs Data Owner"
+  principal_id         = azurerm_chaos_studio_experiment.serverless_messaging_outage.identity[0].principal_id
+}
+
+ /********************************************************************************
+# Notes: Created based on PIR Z_SZ-NV8 (18-MAR-25 Availability Issues in East US
+# due to a cut Fibre-line and tooling failure) and YKYN-BWZ (29-OCT-25 - AFD Global
+# Ingress/DNS/Timeout issues)
+
+# “Accidental NSG change blocks management access” (NSG SecurityRule + VM Redeploy)
+#
+# Scenario: someone pushes an NSG rule that blocks inbound management (SSH/RDP).
+# In parallel, we redeploy VMs to simulate a platform maintenance event + to force
+# connection resets during the window (useful because NSG rules don’t always break
+# existing connections immediately).
+#
+ ********************************************************************************/
+
+ resource "azurerm_chaos_studio_experiment" "nsg_mgmt_lockout" {
+  name                = "exp-nsg-mgmt-lockout"
+  resource_group_name = module.rg_uks_3.name
+  location            = module.rg_uks_3.location
+
+  identity { type = "SystemAssigned" }
+
+  selectors {
+    name                    = "NSGSelector"
+    chaos_studio_target_ids = [azurerm_chaos_studio_target.nsg_uks_1.id]
+  }
+
+  selectors {
+    name                    = "VMSelector"
+    chaos_studio_target_ids = values(azurerm_chaos_studio_target.tgt-vms)[*].id
+  }
+
+  steps {
+    name = "MgmtAccessDisruption"
+
+    # Branches run in parallel (while NSG rule is active)
+    branch {
+      name = "BlockInboundMgmt"
+
+      actions {
+        urn           = azurerm_chaos_studio_capability.nsg_security_rule.urn
+        selector_name = "NSGSelector"
+        action_type   = "continuous"
+        duration      = "PT10M"
+
+        parameters = {
+          # Must be unique on the NSG
+          name                    = "deny-mgmt-ports"
+          priority                = "250"
+          direction               = "Inbound"
+          access                  = "Deny"
+          protocol                = "*"
+          sourceAddressPrefixes      = "[\"*\"]"
+          destinationAddressPrefixes = "[\"*\"]"
+          sourcePortRanges           = "[\"*\"]"
+          destinationPortRanges      = "[\"22\",\"3389\"]"
+        }
+      }
+    }
+
+    branch {
+      name = "RedeployVMs"
+
+      dynamic "actions" {
+        for_each = azurerm_chaos_studio_capability.cap_vm_redeploy
+        content {
+          urn           = actions.value.urn
+          selector_name = "VMSelector"
+          action_type   = "discrete"
+          # no parameters for Redeploy-1.0
+        }
+      }
+    }
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "chaos_experiment_logging_ex3" {
+  name                       = "exp-nsg-mgmt-lockout-logging"
+  target_resource_id         = azurerm_chaos_studio_experiment.nsg_mgmt_lockout.id
+  log_analytics_workspace_id = module.chaos.id
+
+  enabled_log { category = "ExperimentOrchestration" }
+}
+
+# RBAC (recommended minimums)
+resource "azurerm_role_assignment" "exp3_nsg_network_contrib" {
+  scope                = module.nsg_uks_1.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_chaos_studio_experiment.nsg_mgmt_lockout.identity[0].principal_id
+}
+
+# If Redeploy fails due to permissions, add VM Contributor at the compute RG scope (or VM scope)
+# resource "azurerm_role_assignment" "exp3_vm_contrib" {
+#   scope                = module.rg_uks_2.id
+#   role_definition_name = "Virtual Machine Contributor"
+#   principal_id         = azurerm_chaos_studio_experiment.nsg_mgmt_lockout.identity[0].principal_id
+# }
