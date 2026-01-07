@@ -27,6 +27,6 @@ This section will be used to insert a High-Level Design to give an<br>
 impression of how the Chaos Lab Solution is made up.<br>
 *******************************************************************************<br>
 <br>
-![Screenshot of HLD Design.](assets/HLD.png)
+![Screenshot of HLD Design.](assets/HLDv2.png)
 
 Created using Eraser.
